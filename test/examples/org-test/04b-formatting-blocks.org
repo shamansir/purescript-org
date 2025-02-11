@@ -1,0 +1,30 @@
+To markup text in Org, simply surround it with one or more marker characters.
+*Bold*, /italic/ and _underline_ are fairly intuitive, and the ability to use
++strikethrough+ is a plus.  You can _/*combine*/_ the basic markup in any
+order, however ~code~ and =verbatim= need to be the *_~inner-most~_* markers
+if they are present since their contents are interpreted =_literally_=.
+
+[[https://orgmode.org][a nice website]]
+[[file:~/Pictures/dank-meme.png]]
+[[earlier heading][an earlier heading in the document]]
+
+[[https://upload.wikimedia.org/wikipedia/commons/5/5d/Konigsberg_bridges.png]]
+
+#+begin_example
+monospace
+#+end_example
+
+#+begin_src emacs-lisp
+(message "Hello world")
+#+end_src
+
+#+begin_quote
+Everything should be made as simple as possible,
+but not any simpler ---Albert Einstein
+#+end_quote
+
+-----
+
+: Some fixed-width text here
+: Containing several lines
+: Is it understandable?

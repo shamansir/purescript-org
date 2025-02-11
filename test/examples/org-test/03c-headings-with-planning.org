@@ -1,0 +1,10 @@
+* We have a schedule here
+SCHEDULED: <2024-05-10 Fri 22:13>
+** And some deadline, oh no
+DEADLINE: <2024-05-11 Sat 18:12>
+*** And here we have both schedule and deadline, why not?
+DEADLINE: <2024-05-11 Sat +1w> SCHEDULED: <2024-05-10 Fri 22:45>
+*** TODO watch "The Matrix"
+SCHEDULED: <1999-03-31 Wed>
+*** TODO take over the world with Org mode
+DEADLINE: <2034-03-22 Wed> SCHEDULED: <2006-03-12 Sun>

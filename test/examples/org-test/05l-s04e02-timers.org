@@ -1,0 +1,10 @@
+#+SEQ_TODO: NEXT(n/!) TODO(t@/!) WAITING(w@/!) SOMEDAY(s/!) PROJ(p) | DONE(d@) CANCELLED(c)
+#+TAGS: PHONE(o) COMPUTER(c) GARAGE(g) SHOPPING(s) FAMILY(f) URGENT(u)
+#+ARCHIVE: myarchive.org::
+
+* Notes of the football game
+This is a note and the timer is at 0:00:20
+- 0:00:32 :: Team A scored a goal 1:0
+- 0:01:01 :: Team B scored a goal 1:1
+- 0:01:19 :: Foul, red card
+- 0:02:05 :: Thank yor this and thats it for today

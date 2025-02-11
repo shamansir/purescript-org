@@ -1,0 +1,500 @@
+# organice will not reflow if there's hard-wrapped content
+# -*- eval: (auto-fill-mode 0) -*-
+#+TODO: TODO | DONE
+#+TODO: START INPROGRESS STALLED | FINISHED
+
+* This is an actual org file - feel free to play around with it! (Don't worry about messing it up - your changes won't be saved, so just refresh the page to reset it)
+* Tap on any header to open it
+This header has some description text and a couple subheaders. Look through the next few top level headers to learn more about organice.
+** This is a subheader
+** This is a subheader too!
+* Actions
+** Editing headers
+When you select a header, the "header action drawer" appears. The first two icons in this drawer edit the header and description respectively. Try editing this header.
+
+Title and Description fields are not edited as raw text by default. Instead, a semantic editor comes up when editing them. To edit raw values, click the 'edit' icon, again.
+
+If you want the "header action drawer" to disappear or to deselect the current header, tap onto the title (or empty space) in the application's headerbar.
+
+** All icons in the header action bar
+
+1. Pen: Edit header title
+2. Pen in square: Edit header description
+3. Tags: [[https://orgmode.org/manual/Tags.html][Modify tags]]
+4. Properties: [[https://orgmode.org/manual/Properties-and-columns.html][Modify properties]]
+5. Expand: [[https://orgmode.org/manual/Structure-editing.html][Narrow to subtree]] (/Narrowing/ means focusing on this header, making the rest temporarily inaccessible.)
+6. Plus: Create new header below
+7. Mail: Share this header via email
+8. Calendar 1: [[https://orgmode.org/manual/Deadlines-and-scheduling.html][Set deadline datetime]]
+9. Calendar 2: [[https://orgmode.org/manual/Deadlines-and-scheduling.html][Set scheduled datetime]]
+10. Hourglass: [[https://orgmode.org/manual/Clocking-commands.html][Clock in and out (Start and stop the clock)]]
+11. File Export: [[https://orgmode.org/manual/Refile-and-copy.html][Refile this header to another header]]
+12. Add a note: Add a time-stamped note to the current header (=org-add-note=).
+
+** Todos [3/7] [42%]
+This header has a few TODO items as subheaders.
+*** DONE Check out organice
+*** DONE Follow the organice tutorial
+This interactive tutorial helps you get to know organice really quickly.
+*** TODO Learn how to use TODOs in organice
+To advance the todo state of a header, swipe right on it until the background turns green.
+
+Try advancing the todo state of this header a few times!
+**** There's also a setting once you're signed in to enable tapping on the TODO label itself to advance the todo state. Its off by default because I thought the behavior would be confusing unless explained, but I recommend turning it on!
+*** START Investigate custom TODO states
+organice also supports [[http://orgmode.org/manual/Workflow-states.html#Workflow-states][custom todo states]] (if declared at the top of the file). Swipe right on this header a few times.
+
+Note that when the cycle restarts, it defaults to the first set of todo states. Manually edit the header to get back to a different todo state cycle (more on editing headers below!)
+*** FINISHED See that custom TODO states are colored correctly
+Custom =org-todo-keywords= keyword sequences can have finish states. They are colored appropriately. You can see that TODO and START headlines are colored red whereas DONE and FINISHED headlines are colored green.
+
+*** TODO If I have questions: Check out the documentation
+organice has solid documentation, including frequently asked questions: https://organice.200ok.ch/documentation.html
+*** TODO If I have further questions: Join the community chat
+#organice on IRC [[https://libera.chat/][Libera.Chat]], or [[https://matrix.to/#/!DfVpGxoYxpbfAhuimY:matrix.org?via=matrix.org&via=ungleich.ch][#organice:matrix.org]] on Matrix.
+
+** Tags
+The next button in the header action drawer will bring up the tag editor.
+
+This editor lets you add, modify, and reorder tags, as well as giving you easy access to all tags in the file.
+
+Try it out on these headers:
+*** Dogs
+**** Eloise                                        :cute:middleaged:tiny:dog:
+**** Clooney                                            :cute:young:tiny:dog:
+**** Murphy                                            :cute:young:small:dog:
+**** Starla                                             :cute:old:medium:dog:
+**** Rex                                                :cute:old:medium:dog:
+**** Maz                                          :cute:middleaged:large:dog:
+** Narrowing
+The next button in the header action drawer "narrows" to a header, hiding all others and promoting it to the top level. Press the button again to "widen".
+
+Narrowing can make it easier to concentrate on a single heading or topic by eliminating clutter. It can also be used to limit the range of operation of a search command.
+
+This is purely visual - your Org file isn't affected under the hood.
+
+Example: You can narrow on the "Groceries" list when you go to the grocery store. Give it a shot on this grocery list:
+*** Groceries
+- [ ] Mangoes
+- [ ] Dark chocolate
+- [ ] Carrots
+** Adding and removing headers
+To add a new header, press the + button in the header action drawer
+
+To remove a header, swipe left on the header until the background turns red.
+** Moving headers
+To move a header, click on the four-way arrows button at the bottom of the screen with a header selected. 6 buttons will appear for moving headers.
+
+The center 4 move the header up, down, left, and right. The 2 outermost buttons move the header and its entire nested subtree.
+
+Give them a try on these nested headers to get a feel for how they operate:
+*** A few of my favorite things:
+**** Food
+***** Chocolate
+****** Dark chocolate
+****** Milk chocolate
+****** Crispy chocolate
+***** Mangoes
+**** Text editors
+***** Emacs
+**** Mountain bikes
+***** Santa Cruz
+***** Trek
+***** Giant
+***** Specialized
+**** Dogs
+***** Eloise
+***** Maz
+***** Starla
+***** Rex
+***** Clooney
+** Syncing
+The "cloud" button in the lower left hand corner syncs changes to your
+chosen sync service (Dropbox, GitLab, or WebDAV).
+
+If there's a newer version on the server and no local changes, it'll pull.
+
+If there's no newer version on the server and there are local changes, it'll push.
+
+Otherwise, it'll ask what you want to do.
+
+This button isn't enabled in this demo :)
+
+If you'd like to automatically push changes as you make them, you can enable "Live sync" in settings.
+** Undo / Redo
+   When you're signed in, you'll have =undo= and =redo= buttons in the
+   headerbar.
+* Tables
+organice has native support for viewing and editing tables.
+
+Try playing around with this one by first clicking on the table:
+
+| Dog name | Age | Weight (in lbs) | Parent   | Score (1-10) |
+|----------+-----+-----------------+----------+--------------|
+| Eloise   |   3 |             5.1 | Erin     |           15 |
+|----------+-----+-----------------+----------+--------------|
+| Starla   |  15 |              40 | Sarah S  |           15 |
+|----------+-----+-----------------+----------+--------------|
+| Rex      |  15 |              45 | Sarah S  |           15 |
+|----------+-----+-----------------+----------+--------------|
+| Maz      |   1 |              55 | Brittany |           15 |
+|----------+-----+-----------------+----------+--------------|
+| Clooney  | 0.1 |             4.8 | Sarah R  |           15 |
+|----------+-----+-----------------+----------+--------------|
+| Murphy   | 0.5 |              25 | Jordan   |           15 |
+
+** Table actions
+When a table is selected, the table editor is opened.
+
+Below the table a table-specific action drawer appears.
+
+For the icons to trigger any actions, you first need to select a table cell.
+
+The leftmost icon allows you to edit a cell.
+
+In the Middle, the top two icons let you add and remove rows. The bottom two icons let you add and remove columns.
+
+On the right side, the four-way arrow buttons allow you to manipulate tables by moving rows and columns.
+
+Press up and down to move rows, and left and right to move columns.
+* Lists and checkboxes
+organice has native support for displaying plain lists and checkboxes.
+
+Plain:
+
+- Plain list item 1
+- Plain list item 2
+  - Sub item 1
+- Plain list item 3
+
+Ordered:
+
+1. Ordered Item 1
+2. Ordered Item 2
+   1. Sub item
+3. Ordered Item 2
+
+Checkboxes:
+
+- [-] 1 [1/2]
+  - [ ] 1.1 [0%]
+    - [ ] 1.1.1
+  - [X] 1. 2
+- [X] 2
+
+** Editing workflow
+
+First, create the first list item by editing the description of a header. When you close the "edit description" modal, you can manipulate the list item with native list manipulation functions. The UX is analogous to manipulating a header. Here's what you can do:
+
+- Add new list item
+- Remove list item
+- Move list item up
+- Move list item down
+- Move list item left
+- Move list item right
+- Move list subtree left
+- Move list subtree right
+- Edit list item title
+- Edit list item contents
+
+** All icons in the list action bar
+
+1. Pen: Edit list item title
+2. Pen in square: Edit list item contents
+3. Plus: Create new list item below
+4. Cross: Delete list item
+
+* Timestamps
+organice has native support for displaying and editing [[https://orgmode.org/manual/Timestamps.html#Timestamps][timestamps]].
+
+Try tapping on the timestamps below to get a feel for the editor:
+
+<2018-09-17 Sun>
+
+[2018-09-17 Sun]
+
+[2018-09-17 Sun +1d]
+
+[2018-09-17 Sun 10:00-11:30]
+
+<2018-09-17 Sun>--<2018-09-25 Tue>
+
+** Habit tracking
+
+Org has the ability to track the consistency of a special category of TODO, called "habits." From the [[https://orgmode.org/manual/Tracking-your-habits.html][upstream doc]]: A timestamp may have minimum and maximum ranges specified by using the syntax =.+2d/3d=, which says that you want to do the task at least every three days, but at most every two days.
+
+Example timestamp: <2009-10-17 Sat .+2d/4d>
+
+organice supports parsing and preserving the minimum/maximum range timestamps. Alas, only the minimum range is handled as a [[https://orgmode.org/manual/Repeated-tasks.html][repeated task]]. There's no UI for the maximum range, it can be edited as raw text. Also, there is no UI to show how well a habit has been exercised.
+
+* Automatic/Implicit links
+
+organice recognizes various types of hyperlinks automatically which Emacs Org mode would not necessarily do. That makes sense, because mobile devices, or browsers, enable a different feature set.
+
+For example, when you read this in organice, then the text https://organice.200ok.ch will implicitly be rendered as a clickable link (as it would be in Emacs Org mode). The same also works for other web links like www.200ok.ch, email addresses like info@200ok.ch, and different kinds of phone numbers. For these, Emacs Org mode doesn't create an explicit link, but organice can and does.
+
+International/US phone numbers:
+
+  - 123-456-7890
+  - (123) 456-7890
+  - 123 456 7890
+  - 123.456.7890
+  - +91 (123) 456-7890
+
+Swiss phone numbers:
+
+ - 0783268674
+ - 078 326 86 74
+ - 041783268675
+ - 0041783268674
+ - +41783268676
+ - +41783268677
+
+* Property lists
+organice has native support for viewing and editing [[https://orgmode.org/guide/Properties.html][property lists]]. To bring up an editor, expand the ~PROPERTIES~ drawer below and tap on any of the properties.
+** Example
+:PROPERTIES:
+:callsign: Maverick
+:eyewear: Aviators
+:launch-date: [1986-05-16 Fri]
+:END:
+* Planning
+organice has native support for adding and editing DEADLINE and SCHEDULED items. It also supports [[https://orgmode.org/manual/Repeated-tasks.html][repeaters]] and [[https://orgmode.org/manual/Deadlines-and-scheduling.html#Deadlines-and-scheduling][delays]]. Check out these examples:
+
+=DEADLINE= means that the task - most likely a TODO item, though not necessarily—is supposed to be finished on that date.
+
+=SCHEDULED= means that you are planning to start working on that task on the given date.
+
+Scheduling an item should not be understood in the same way that we understand scheduling a meeting. Setting a date for a meeting is just a simple appointment, you can mark this entry with a simple plain timestamp, to get this item shown on the date where it applies.
+
+** An item with a deadline
+   DEADLINE: <2018-10-03 Wed>
+
+Deadlines and scheduled items produce entries in the agenda when they are over-due, so it is important to be able to mark such an entry as done once you have done so. When you mark a ‘DEADLINE’ or a ‘SCHEDULED’ with the TODO keyword ‘DONE’, it no longer produces entries in the agenda.
+** An item that is scheduled
+   SCHEDULED: <2018-10-18 Thu>
+** Doctors appointment <2020-10-07 Wed>
+
+For simple appointments, it is enough to mark the entry with a simple plain timestamp. This will still show up in the agenda.
+
+** An item with both
+   DEADLINE: <2018-10-05 Fri> SCHEDULED: <2018-10-04 Thu>
+** TODO An item with a repeater - try swiping right to advance to the DONE state
+   DEADLINE: <2019-01-10 Thu +1w>
+   :PROPERTIES:
+   :LAST_REPEAT: [2019-01-03 Thu 15:35]
+   :END:
+
+   - State "DONE"       from "TODO"       [2019-01-03 Thu 15:35]
+
+The =+1w= is a repeater; the intended interpretation is that the task has a deadline on '2019-01-10' and repeats itself every (one) week starting from that time. You can use yearly, monthly, weekly, daily and hourly repeat cookies by using the 'y', 'w', 'm', 'd' and 'h' letters.
+
+With the =+1w= cookie, the date shift is always exactly one week. So if you completed the TODO for three months, marking this entry DONE still keeps it as an overdue deadline. Depending on the task, this may not be the best way to handle it. For example, if you forgot to call your father for 3 weeks, it does not make sense to call him 3 times in a single day to make up for it. Finally, there are tasks, like changing batteries, which should always repeat a certain time after the last time you did it. For these tasks, Org mode has special repeaters =++= and =.+=. For example:
+
+*** TODO Call kitchen trash
+    DEADLINE: <2019-02-11 Mon ++1w>
+    Marking this DONE shifts the date by at least one week, but also by as many weeks as it takes to get this date into the future. However, it stays on a Sunday, even if you called and marked it done on Saturday.
+
+*** TODO Check the batteries in the smoke detectors
+    DEADLINE: <2019-11-01 Fri .+1m>
+    Marking this DONE shifts the date to one month after today.
+** TODO An item with deadline and different lead time
+   DEADLINE: <2020-10-07 Wed>
+
+On the deadline date, the task is listed in the agenda. In addition, the agenda for today carries a warning about the approaching or missed deadline, starting a defined time period before the due date (see settings "Default DEADLINE warning period"), and continuing until the entry is marked as done.
+
+You can specify a different lead time for warnings for a specific deadlines using the following syntax. Here is an example with a warning period of 5 days 'DEADLINE: <2004-02-29 Sun -5d>'.
+
+In case the task contains a repeater, the delay is considered to affect all occurrences; if you want the delay to only affect the first scheduled occurrence of the task, use '--5d' instead.
+
+
+In the settings, there is an option to display deadline values on each headline.
+* Capture
+organice supports something like [[https://orgmode.org/manual/Capture.html][Org capture]] in the form of customizable, quickly accessible buttons for creating new headers.
+
+Click the button in the bottom right corner of the screen to see some examples. The first button, the lemon, will create a new entry in the "Groceries" list below this. The second button adds an entry to a more deeply nested header.
+
+Once signed in, you can set up capture templates that specify header paths (and various other configurations). If the list is empty, the content will be inserted at the end of the file, or the beginning if the prepend option is selected. These capture templates will sync between your devices if you enable settings sync.
+** Groceries
+** Deeply
+*** Nested
+**** Headers
+***** Work
+****** Too!
+
+* Search / Task List / Clock List
+
+Below, there is a button to open up a generic search and a task list. The modal opens "Search" by default, but remembers what was opened last. If there are open clocks, a third tab "Clock List" is added
+
+Tap a header in the view to jump to it.
+
+Using the filter input, you can search for headlines. Specifically, you can search for headline text, TODO keywords, tags, and [[https://orgmode.org/guide/Properties.html][orgmode properties]]. It also supports alternatives, and you can exclude headlines by negating a filter.
+
+When a header is narrowed, and the user uses the 'search' or 'task list' feature, then the searched header list is automatically narrowed to only subheaders of the originally narrowed header.
+
+** Bookmarks
+
+After entering a search string, you can bookmark it using the ⭐ button.
+
+Bookmarked search strings populate the suggestions if no search string is entered into the input field.
+
+Bookmarks are saved by context, so there are separate bookmarks for search, task-list, and refile.
+
+There are at most ten bookmarks for a context. Newly saved bookmarks are inserted at the top of the list. If the list gets too long, the last search strings are dropped. Duplicate bookmarks are dropped too. The list of bookmarks is ordered by last used.
+
+Bookmarks are unaware of file context. Therefore, you always have the same bookmarks.
+
+** Differences Search and Task List
+
+- In the task list, you can tap on the date to switch to a more readable relative date format.
+- The task list shows only tasks - i.e. headlines with a TODO keyword are displayed.
+  - The tasks will be sorted by state and then date.
+
+** Examples for the search syntax
+
+You can simply search for
+
+=TODO check out organice|orgmode=
+
+to filter for tasks containing these words. The pipe symbol (|) is a logical /OR/. The filter is a smart-case search:
+
+- Lower-case words mean that the filter ignores the case.
+- If a word contains upper-case letters, the filter is case-sensitive.
+
+The following example searches for headlines containing *START* or *FINISHED* keywords and the string "states are". You can also use single-quotes.
+
+=START|FINISHED "states are"=
+
+The next example excludes *DONE* headlines but requires the tag *fun*.
+
+=-DONE  :fun=
+
+You can exclude text strings, tags, and properties as well by prepending the minus sign (-).
+
+You can search for headlines with defined properties:
+
+=TODO :blocked_by:  :assignee:nobody|none=
+
+This filters headlines having a property *blocked_by* (with any value) and a property *assignee* with a value containing =nobody= or =none=.
+
+You can also negate filters by prefixing them with =-=. For example, if you want to search for all headers that are not DONE:
+
+=-DONE=
+
+You can also search time ranges on headers with planning items (SCHEDULED and DEADLINE), plain active timestamps or clocked work time.
+
+The time related filters are:
+
+- =scheduled= (shorthand =sched=)
+- =deadline= (shorthand =dead=)
+- =clock=
+- =date=
+
+=date= is a shorthand to search for planning items (SCHEDULED and DEADLINE) and plain active timestamps at the same time.
+
+These time related filters work on time ranges indicated by =START..END= where =START= and =END= support the following units:
+
+- =h=: Hours
+- =d=: Days
+- =w=: Weeks
+- =m=: Months
+- =y=: Years
+
+=START= and =END= can both be omitted to search for an infinite timespan into the past or future. Both can be used with digits to quantify the amount (i.e. =2w= for two weeks). For both, the digit can be omitted to refer to the calendar unit instead of a time duration (i.e. =w= is the current week using the [[https://en.wikipedia.org/wiki/Week#The_ISO_week_date_system][Western Traditional]] system [from Sunday to Saturday]).
+
+There are two special units that need no quantification:
+
+- =today=: Current date
+- =now=: Current time
+
+Next to units, =START= and =END= can also be expressed in dates like. Dates can be expressed by:
+
+- =YYYY= (i.e. 2020)
+- =YYYY-MM= (i.e. 2020-11)
+- =YYYY/MM= (i.e. 2020/11)
+- =YYYY.MM= (i.e. 2020.11)
+- =YYYYMM= (i.e. 202011)
+- =YYYY-MM-DD= (i.e. 2020-11-17)
+- =YYYY/MM/DD= (i.e. 2020/11/17)
+- =YYYY.MM.DD= (i.e. 2020.11.17)
+- =YYYYMMDD= (i.e. 20201117)
+
+Some examples on how to use time ranges:
+
+- =clock:..= searches for all items with time clocked. This includes headers that have time logged on their children.
+  - =clock:now= searches for currently clocked in headers.
+- =sched:w= searches for all scheduled items in the current week (same for other units).
+- =dead:..w= searches for all deadlines between now and the end of the week.
+- =date:today= searches for all planning items (scheduled and deadline items) as well as items with active timestamps.
+- =date:1w= (equivalent to =date:..1w=) searches from now to one week in the future.
+- =sched:2m..w= if both ends of the range are relative, they refer back to the current moment. So this searches for all scheduled items between two months before now to the end of the current week.
+
+Note that negating time ranges is not implemented.
+
+To search for the description of your headlines, use =desc= or =description=:
+
+- =desc:"search term"=
+
+If you want to search for multiple terms, you can combine them like so:
+
+- =desc:term_1 desc:term_2=
+
+
+** Auto-completion for filters
+
+You probably noticed that organice provides suggestions for your filter. After space, =-=, =:=, and =|= you can tap on the completion – no need to type the tag, property, etc.
+
+** TODO Example with properties							:fun:
+:PROPERTIES:
+:assignee: nobody
+:blocked_by: the others
+:END:
+
+* Agenda
+organice has a basic agenda view that you can access by tapping the calendar button at the bottom of the page.
+
+Tap a header in this view to jump to it, and tap on the date to switch to a more readable relative date format.
+
+Due and overdue items with deadlines and a schedule show up on today's entry. Entries with just an active timestamp are shown only on exactly the day of the timestamp. Hence, a 'meeting' or an 'appointment' should get an active timestamp whereas a TODO often will be scheduled or even has a deadline.
+
+More information on that in the [[https://orgmode.org/manual/Deadlines-and-Scheduling.html][org manual]].
+
+Examples:
+
+** TODO Check out the organice agenda view
+DEADLINE: <2018-09-10 Mon>
+** TODO Install organice to the homescreen on my mobile phone
+SCHEDULED: <2018-09-17 Mon>
+** This entry shows only exactly on <2020-02-17 Mon> in the agenda
+** This entry also only shows on exactly one day
+   <2020-02-17 Mon>
+* Syncing
+organice pulls down your org files from Dropbox, GitLab, or WebDAV. Click the "Sign in" button in the upper right hand corner to sign in with either of them and authenticate organice.
+
+** Backups
+The first time you push changes from organice back up to your chosen sync service, organice will make a backup of the original file first. It'll be named {your-file-name}.organice-bak. Dropbox keeps a full version history of your files for you, but this is an additional precaution in case something goes wrong pushing the file back up.
+
+Generally, when working with distributed Org files, we're recommending to put them under version control and to check for bugs and racing conditions between clients.
+
+* Multiple files
+organice supports using multiple files.
+
+Default behaviour:
+
+- When you first open a file it is loaded from the backend. At this point the file is persisted to local storage. It will be loaded from there on future application starts. To ensure consistency whenever a file is opened it will be synced with the backend.
+- Agenda, Refile, Search and Task List by default show results from the currently viewed file.
+
+You can adjust these defaults on a file per file basis by creating file settings in the [[/settings][settings menu]].
+
+* organice operates completely client side
+You don't log in to organice directly because organice doesn't have a back end - it operates completely client side using Dropbox, GitLab, or WebDAV as back-ends for storage.
+* Capture URL params and Siri support
+organice supports a flexible mechanism for capturing using URL parameters. This mechanism integrates very nicely with the new [[https://support.apple.com/guide/shortcuts/welcome/ios][Siri Shortcuts]] feature in iOS 12, allowing you to use Siri to execute capture templates.
+
+You can use [[https://www.icloud.com/shortcuts/14f91f8cf8f547a183a0734396240984][this sample Shortcut]] to get started with this right away in iOS 12. Open the link on your iOS device and click "Get Shortcut". Then open up the Shortcuts app and edit the template by following the directions in the comments. Then record a Siri trigger and you're good to go!
+
+Alternatively, you can take advantage of the URL parameters yourself to build your own custom capture mechanism. You can find more details about this in [[https://github.com/200ok-ch/organice/#capture-params-and-siri-support][the README file]].
+
+* Further questions?
+
+If you've finished this interactive tutorial, but have further questions, we have you covered! There is additional [[https://organice.200ok.ch/documentation.html][documentation]] which contains more comprehensive and formal documentation, including installation instructions, deployment guides, contribution guidelines, and technical details about the project's architecture and development process. This file is aimed at both users seeking in-depth information and developers interested in contributing to the project.

@@ -1,0 +1,182 @@
+#+TITLE:     org-syntax-cheatsheet.org
+#+AUTHOR:    John Smith
+#+EMAIL:     john.smith@email.com
+#+DATE:      2012-10-03 Wed
+#+DESCRIPTION: Some fancy description.
+#+KEYWORDS: keyword1, keyword2.
+#+LANGUAGE:  en
+#+OPTIONS:   H:3 num:t toc:t \n:nil @:t ::t |:t ^:t -:t f:t *:t <:t
+#+OPTIONS:   TeX:t LaTeX:t skip:nil d:nil todo:t pri:nil tags:not-in-toc
+#+INFOJS_OPT: view:nil toc:2 ltoc:t mouse:underline buttons:0 path:http://orgmode.org/org-info.js
+#+EXPORT_SELECT_TAGS: export
+#+EXPORT_EXCLUDE_TAGS: noexport
+#+LINK_UP:
+#+LINK_HOME:
+#+XSLT:
+* What else can be specified.
+  Also check [[http://orgmode.org/manual/Export-options.html][Manual entry for export options]]
+** Summary:
+   - #+TITLE:       the title to be shown (default is the buffer name)
+   - #+AUTHOR:      the author (default taken from user-full-name)
+   - #+DATE:        a date, an Org timestamp1, or a format string for format-time-string
+   - #+EMAIL:       his/her email address (default from user-mail-address)
+   - #+DESCRIPTION: the page description, e.g. for the XHTML meta tag
+   - #+KEYWORDS:    the page keywords, e.g. for the XHTML meta tag
+   - #+LANGUAGE:    language for HTML, e.g. ‘en’ (org-export-default-language)
+   - #+TEXT:        Some descriptive text to be inserted at the beginning.
+   - #+TEXT:        Several lines may be given.
+   - #+OPTIONS:     H:2 num:t toc:t \n:nil @:t ::t |:t ^:t f:t TeX:t ...
+   - #+BIND:        lisp-var lisp-val, e.g.: org-export-latex-low-levels itemize
+   - You need to confirm using these, or configure org-export-allow-BIND
+     - #+LINK_UP:     the ``up'' link of an exported page
+     - #+LINK_HOME:   the ``home'' link of an exported page
+     - #+LaTeX_HEADER: extra line(s) for the LaTeX header, like \usepackage{xyz}
+     - #+EXPORT_SELECT_TAGS:   Tags that select a tree for export
+     - #+EXPORT_EXCLUDE_TAGS:  Tags that exclude a tree from export
+     - #+XSLT:        the XSLT stylesheet used by DocBook exporter to generate FO file
+   - #+SETUPFILE: path to setup file. (simplifies frequent use of the same options)
+   - #+STYLE:    <link rel="stylesheet" type="text/css" href="stylesheet.css" /> (for html export)
+** Meaning of the options
+   - H:         set the number of headline levels for export
+   - num:       turn on/off section-numbers
+   - toc:       turn on/off table of contents, or set level limit (integer)
+   - \n:        turn on/off line-break-preservation (DOES NOT WORK)
+   - @:         turn on/off quoted HTML tags
+   - ::         turn on/off fixed-width sections
+   - |:         turn on/off tables
+   - ^:         turn on/off TeX-like syntax for sub- and superscripts.  If you write "^:{}", a_{b} will be interpreted, but the simple a_b will be left as it is.
+   - -:         turn on/off conversion of special strings.
+   - f:         turn on/off footnotes like this[1].
+   - todo:      turn on/off inclusion of TODO keywords into exported text
+   - tasks:     turn on/off inclusion of tasks (TODO items), can be nil to remove all tasks, todo to remove DONE tasks, or list of kwds to keep
+   - pri:       turn on/off priority cookies
+   - tags:      turn on/off inclusion of tags, may also be not-in-toc
+   - <:         turn on/off inclusion of any time/date stamps like DEADLINES
+   - *:         turn on/off emphasized text (bold, italic, underlined)
+   - TeX:       turn on/off simple TeX macros in plain text
+   - LaTeX:     configure export of LaTeX fragments.  Default auto
+   - skip:      turn on/off skipping the text before the first heading
+   - author:    turn on/off inclusion of author name/email into exported file
+   - email:     turn on/off inclusion of author email into exported file
+   - creator:   turn on/off inclusion of creator info into exported file
+   - timestamp: turn on/off inclusion creation time into exported file
+   - d:         turn on/off inclusion of drawers, or list drawers to include
+** CSS Support for HTML export
+   - p.author            author information, including email
+   - p.date              publishing date
+   - p.creator           creator info, about org mode version
+   - .title              document title
+   - .todo               TODO keywords, all not-done states
+   - .done               the DONE keywords, all states that count as done
+   - .WAITING            each TODO keyword also uses a class named after itself
+   - .timestamp          timestamp
+   - .timestamp-kwd      keyword associated with a timestamp, like SCHEDULED
+   - .timestamp-wrapper  span around keyword plus timestamp
+   - .tag                tag in a headline
+   - ._HOME              each tag uses itself as a class, "@" replaced by "_"
+   - .target             target for links
+   - .linenr             the line number in a code example
+   - .code-highlighted   for highlighting referenced code lines
+   - div.outline-N       div for outline level N (headline plus text))
+   - div.outline-text-N  extra div for text at outline level N
+   - .section-number-N   section number in headlines, different for each level
+   - div.figure          how to format an inlined image
+   - pre.src             formatted source code
+   - pre.example         normal example
+   - p.verse             verse paragraph
+   - div.footnotes       footnote section headline
+   - p.footnote          footnote definition paragraph, containing a footnote
+   - .footref            a footnote reference number (always a <sup>)
+   - .footnum            footnote number in footnote definition (always <sup>)
+** LaTeX Support
+   By default, the LaTeX output uses the class article.
+   - #+LaTeX_CLASS: article
+   - #+LaTeX_CLASS_OPTIONS: [a4paper]
+   - #+LaTeX_HEADER: \usepackage{xyz}
+   - #+LaTeX: Literal LaTeX code for export
+   - #+BEGIN_LaTeX
+     All lines between these markers are exported literally
+     #+END_LaTeX
+   - #+CAPTION: A long table
+     #+LABEL: tbl:long
+     #+ATTR_LaTeX: longtable align=l|lp{3cm}r|l
+     | ..... | ..... |
+     | ..... | ..... |
+   - #+CAPTION: A long table
+     #+LABEL: tbl:long
+     #+ATTR_LaTeX: longtable align=l|lp{3cm}r|l
+     | ..... | ..... |
+     | ..... | ..... |
+   - #+CAPTION:    The black-body emission of the disk around HR 4049
+     #+LABEL:      fig:SED-HR4049
+     #+ATTR_LaTeX: width=5cm,angle=90
+     [[./img/sed-hr4049.pdf]]
+     #+ATTR_LaTeX: width=0.38\textwidth wrap placement={r}{0.4\textwidth}
+     [[./img/hst.png]]
+   - [[http://orgmode.org/manual/Beamer-class-export.html#Beamer-class-export][Beamer class support]]
+   - [[http://orgmode.org/manual/Embedded-LaTeX.html#Embedded-LaTeX][Embedded Latex]]
+* References
+** Org Babel
+   [[http://orgmode.org/worg/org-contrib/babel/index.html][Babel for org-mode]]
+** Org
+   [[http://orgmode.org/worg/org-tutorials/index.html][Tutorials]]
+   [[http://orgmode.org/worg/index.html][Worg main site.]]
+* Heading with tags 						  :tag1:tag2:
+** TODO Heading 2: Set a deadline and a schedule
+   SCHEDULED: <2012-03-06 Tue> DEADLINE: <2012-03-07 Wed>
+*** DONE [66%] Heading 3: a list with checkboxes
+    1. [X] task 1
+    2) [X] task 2
+    3. [ ] task 3
+** TODO [1/3] Track completion of tasks
+*** DONE Finished task
+    - State "DONE"       from "TODO"       [2012-03-07 Wed 07:56]
+*** STARTED Started task
+*** TODO Unstarted task
+    - State "TODO"       from "DONE"       [2012-03-07 Wed 08:02]
+* Fancy typesetting features
+  - *bold* /ital/ _underline_ =code= ~verbatim~ +strike through+
+  # comment (not exported)
+  - : literal example
+  - -----  horizontal line (5 dashes)
+* Hyperlinks
+  [[http:][hyperlink text]]
+  [[http://orgmode.org/worg/images/orgweb/2.jpg]]
+  [[info:org#External links][External Links]]
+  [[docview:papers/last.pdf::NNN][targetted link]]
+  [[shell:ls *.org][shell commands]]
+* Tables and Spreadsheets
+  :PROPERTIES:
+  :foo:      bar
+  :Cats:     Cheese burger
+  :END:
+** Basic Table
+   #+TBLNAME: dates
+   | Col1 | Col 2 |
+   |------+-------|
+   | KW   | Sep   |
+   | TW   | Aug   |
+   # C-c - :: insert a row of dashes
+** Spreadsheet
+   #+TBLNAME: square-roots
+   | x |         y |
+   |---+-----------|
+   | 1 |         1 |
+   | 2 | 1.4142136 |
+   | 3 | 1.7320508 |
+   | 4 |         2 |
+   #+TBLFM: $2=sqrt($1)
+* Source Code
+  #+name: R-plot-1-to-10
+  #+begin_src R
+  plot(1:10)
+  #+end_src
+  #+name: add1(x=0)
+  #+begin_src python :cache :results silent
+  return x + 1
+  #+end_src
+* Mathematical Equations
+  \begin{equation}
+  \int^x_0 x^2 dx = \frac{x^3}{3}
+  \end{equation}
+  # C-c C-x C-l

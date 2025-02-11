@@ -1,0 +1,20 @@
+* Node Properties
+  :PROPERTIES:
+  :NAME: VALUE
+  :NAME:
+  :NAME+: VALUE
+  :NAME+:
+  :END:
+
+* Heading
+  :PROPERTIES:
+  :CUSTOM_ID: someid
+  :END:
+  #+KEY: VALUE
+  #+KEY[OPTVAL]: VALUE
+  #+attr_BACKEND: VALUE
+  
+  #+name: image-name
+  #+caption: This is a caption for
+  #+caption: the image linked below
+  [[file:some/image.png]]

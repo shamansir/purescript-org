@@ -1,0 +1,57 @@
+#+SEQ_TODO: NEXT(n/!) TODO(t@/!) WAITING(w@/!) SOMEDAY(s/!) PROJ(p) | DONE(d@) CANCELLED(c)
+#+TAGS: PHONE(o) COMPUTER(c) GARAGE(g) SHOPPING(s) FAMILY(f) URGENT(u)
+#+ARCHIVE: myarchive.org::
+
+* GTD Related things
+** NEXT Weekly Review
+SCHEDULED: <2016-06-26 ++1w>
+:LOGBOOK:
+- Rescheduled from "[2016-06-24 Fr ++1w]" on "[2016-06-21 Di 19:31]" \\
+Private stuff rescheduled for Sundays
+:END
+
+* Examples
+** NEXT Orgmode Tutorial Episode 03 [/]
+Collection of ideas
+- [X] Function: Automatic logging of status changes
+- [X] Concept: Splitting your org file into several files
+- [ ] Function: The first capture template
+    + Simple Template example
+    + Show how its working, then reverse engineer
+- [ ] Function: The :PROPERTIES: drawer
+- [ ] Function: Archiving to different files
+
+** NEXT Repeating task A
+SCHEDULED: <2016-06-16 Do +1w>
+:PROPERTIES:
+:END:
+:LOGBOOK:
+:END:
+
+** NEXT Repeating task B
+SCHEDULED: <2016-06-02 Do +1w>
+:PROPERTIES:
+:LOGGING: nil
+:END:
+:LOGBOOK:
+:END:
+
+* Books
+** SOMEDAY Robert Lous Stevenson - Treasure Island
+:PROPERTIES:
+:PAGES: 122
+:GENRE: Adventure
+:END:
+- Recommended by My friend Bill
+** SOMEDAY David Allen - Getting Things Done
+:PROPERTIES:
+:PAGES: 352
+:GENRE: Management
+:END:
+- Recommended by GTD Group on LinkedIn
+** SOMEDAY Cal Newport - Deep Work
+:PROPERTIES:
+:PAGES: 302
+:GENRE: Time management
+:END:
+- Recommended by Reddit Forum

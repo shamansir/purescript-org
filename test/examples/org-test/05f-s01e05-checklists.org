@@ -1,0 +1,16 @@
+#+STARTUP: hidestars
+
+* 2016
+** 2016-06 June
+*** 2016-06-10 Friday [/]
+- [X] Weekly review
+- [X] Go grocery shopping
+- [X] Read another chapter of "Predictably irrational"
+- [X] Practice bass
+*** 2016-06-11 Saturday [%]
+- [X] Record screencast for orgmode tutorial
+- [X] Do the laundry
+- [-] Vacuum the house
+- [ ] Wash the car -> it was raining
+- [X] Practice bass
+- [X] Get birtday present

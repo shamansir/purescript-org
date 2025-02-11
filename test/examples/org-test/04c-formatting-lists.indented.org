@@ -1,0 +1,25 @@
+To buy:
+1. Milk
+2. Eggs
+   - Organic
+3. Cheese
+   + Parmesan
+   + Mozzarella
+
+- [ ] not started
+- [-] in progress
+- [X] complete
+
+- [ ] fruits :: get apples
+- [X] veggies :: get carrots
+
+a. First
+b. Second
+c. Third
+d. Fourth
+
+- item
+3. [@3] set to three
++ [-] tag :: item contents
+  * item, note whitespace in front
+* not an item, but heading - heading takes precedence

@@ -1,0 +1,27 @@
+#+SEQ_TODO: NEXT(n) TODO(t) WAITING(w) SOMEDAY(s) PROJ(p) | DONE(d) CANCELLED(c)
+
+* GTD related things
+** NEXT Weekly Review
+
+* Legal obligations
+** NEXT Prepare tax declaration
+- Collect all documents for your tax lawyer
+** TODO Call the tax lawyer after the document were sent
+
+* Maitenance
+** NEXT Wash the car
+- Washing from outside and vacuum cleaning the inside
+** PROJ Repair bycicle
+*** WAITING Delivery of spare part (chain)
+I have chain ordered, needs to be delivered
+*** TODO Mount chain
+You probably need to re adjust the gear shifting
+
+* Family business
+** NEXT Get a birthday gift for wife
+** NEXT Watch concert of your kid in school
+- Don't miss that, otherwise kid is dissapointed
+
+* House stuff
+** SOMEDAY Build a bike port in the garden
+Budget is $200 for the whole thing

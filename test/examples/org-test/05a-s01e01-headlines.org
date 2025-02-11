@@ -1,0 +1,23 @@
+* Top Items
+
+** This should be a level 2 headline under Top Items
+So put cursor on it, press CTRL+C CTRL+W and move it here
+
+* Level 1 headline
+** Level 2 headline
+** This should be also a level 2 block
+Indented Text to shift around
+*** Level 3 Headline
+Here we are at level  3
+
+* Another level 1 headline
+** This Level 2 can move down, but not up
+** This is also a level 2
+
+* Lets have this as an example
+** Level 2 for the example
+Some text
+** Some more level 2
+Some more text
+*** Level 3 for demostration
+Some text for demonstration

@@ -1,0 +1,2 @@
+#+title: The glories of Org
+#+author: A. Org Author

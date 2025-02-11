@@ -1,0 +1,43 @@
+# ls -1 pandoc --from=org --to=json  ./test/examples/org-test/*.org --output=./test/examples/org-test/*.pandoc.json
+# find : \./test/examples/org-test/([^.]+)(\.indented|\.v1|\.v2)?.org
+# replace : pandoc --from=org --to=json  ./test/examples/org-test/$1$2.org --output=./test/examples/org-test/$1$2.pandoc.json
+pandoc --from=org --to=json  ./01-empty.org --output=./01-empty.pandoc.json
+pandoc --from=org --to=json  ./02a-meta.org --output=./02a-meta.pandoc.json
+pandoc --from=org --to=json  ./02b-meta-special.org --output=./02b-meta-special.pandoc.json
+pandoc --from=org --to=json  ./03a-headings-with-no-content.org --output=./03a-headings-with-no-content.pandoc.json
+pandoc --from=org --to=json  ./03b-headings-with-content.indented.org --output=./03b-headings-with-content.indented.pandoc.json
+pandoc --from=org --to=json  ./03b-headings-with-content.org --output=./03b-headings-with-content.pandoc.json
+pandoc --from=org --to=json  ./03c-headings-with-planning.org --output=./03c-headings-with-planning.pandoc.json
+pandoc --from=org --to=json  ./03d-headings-with-tags.org --output=./03d-headings-with-tags.pandoc.json
+pandoc --from=org --to=json  ./03e-basic-structuring.indented.org --output=./03e-basic-structuring.indented.pandoc.json
+pandoc --from=org --to=json  ./03e-basic-structuring.org --output=./03e-basic-structuring.pandoc.json
+pandoc --from=org --to=json  ./04a-formatting-headings.indented.org --output=./04a-formatting-headings.indented.pandoc.json
+pandoc --from=org --to=json  ./04a-formatting-headings.org --output=./04a-formatting-headings.pandoc.json
+pandoc --from=org --to=json  ./04b-formatting-blocks.org --output=./04b-formatting-blocks.pandoc.json
+pandoc --from=org --to=json  ./04c-formatting-lists.indented.org --output=./04c-formatting-lists.indented.pandoc.json
+pandoc --from=org --to=json  ./04c-formatting-lists.org --output=./04c-formatting-lists.pandoc.json
+pandoc --from=org --to=json  ./04d-formatting-tables.org --output=./04d-formatting-tables.pandoc.json
+pandoc --from=org --to=json  ./04e-formatting-footnotes.org --output=./04e-formatting-footnotes.pandoc.json
+pandoc --from=org --to=json  ./04f-formatting-comments.indented.org --output=./04f-formatting-comments.indented.pandoc.json
+pandoc --from=org --to=json  ./04f-formatting-comments.org --output=./04f-formatting-comments.pandoc.json
+pandoc --from=org --to=json  ./04g-formatting-dates.org --output=./04g-formatting-dates.pandoc.json
+pandoc --from=org --to=json  ./04h-formatting-properties-and-keywords.indented.org --output=./04h-formatting-properties-and-keywords.indented.pandoc.json
+pandoc --from=org --to=json  ./04h-formatting-properties-and-keywords.org --output=./04h-formatting-properties-and-keywords.pandoc.json
+pandoc --from=org --to=json  ./04i-formatting-drawers.indented.org --output=./04i-formatting-drawers.indented.pandoc.json
+pandoc --from=org --to=json  ./04i-formatting-drawers.org --output=./04i-formatting-drawers.pandoc.json
+pandoc --from=org --to=json  ./04j-formatting-macro.org --output=./04j-formatting-macro.pandoc.json
+pandoc --from=org --to=json  ./04k-formatting-tables-special.org --output=./04k-formatting-tables-special.pandoc.json
+pandoc --from=org --to=json  ./05a-s01e01-headlines.org --output=./05a-s01e01-headlines.pandoc.json
+pandoc --from=org --to=json  ./05b-s01e02a-todo-keywords.v1.org --output=./05b-s01e02a-todo-keywords.v1.pandoc.json
+pandoc --from=org --to=json  ./05c-s01e02b-todo-keywords.v2.org --output=./05c-s01e02b-todo-keywords.v2.pandoc.json
+pandoc --from=org --to=json  ./05d-s01e03a-schedule.org --output=./05d-s01e03a-schedule.pandoc.json
+pandoc --from=org --to=json  ./05e-s01e04-repeating.org --output=./05e-s01e04-repeating.pandoc.json
+pandoc --from=org --to=json  ./05f-s01e05-checklists.org --output=./05f-s01e05-checklists.pandoc.json
+pandoc --from=org --to=json  ./05g-s02e01-tags.org --output=./05g-s02e01-tags.pandoc.json
+pandoc --from=org --to=json  ./05h-s02e04-drawers-logging.org --output=./05h-s02e04-drawers-logging.pandoc.json
+pandoc --from=org --to=json  ./05i-s03e04a-properties-drawer.org --output=./05i-s03e04a-properties-drawer.pandoc.json
+pandoc --from=org --to=json  ./05j-s03e04b-template.org --output=./05j-s03e04b-template.pandoc.json
+pandoc --from=org --to=json  ./05k-s04e01-ordered-tasks.org --output=./05k-s04e01-ordered-tasks.pandoc.json
+pandoc --from=org --to=json  ./05l-s04e02-timers.org --output=./05l-s04e02-timers.pandoc.json
+pandoc --from=org --to=json  ./05m-s05e04-priorities.org --output=./05m-s05e04-priorities.pandoc.json
+pandoc --from=org --to=json  ./06a-properties-and-drawers.org --output=./06a-properties-and-drawers.pandoc.json

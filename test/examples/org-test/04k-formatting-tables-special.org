@@ -1,0 +1,11 @@
+| I    | am  | a    | table |
+| with | two | rows | !     |
+
+
+| Tool         | Literate programming? | Reproducible Research? | Languages |
+|--------------+-----------------------+------------------------+-----------|
+| Javadoc      | partial               | no                     | Java      |
+| Haskell .lhs | partial               | no                     | Haskell   |
+| noweb        | yes                   | no                     | any       |
+| Sweave       | partial               | yes                    | R         |
+| Org-mode     | yes                   | yes                    | any       |

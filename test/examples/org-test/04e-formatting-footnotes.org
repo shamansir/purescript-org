@@ -1,0 +1,14 @@
+[fn:LABEL]
+[fn:LABEL:DEFINITION]
+[fn::DEFINITION]
+
+Some text with footnote [fn:1] inside. Also an [fn:inline:Inline footnote] somehow appeared here.
+And a footnote [fn::only with definition], right away.
+
+
+[fn:1] A short footnote.
+
+[fn:2] This is a longer footnote.
+
+
+It even contains a single blank line.

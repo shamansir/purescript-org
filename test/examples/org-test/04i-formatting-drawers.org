@@ -1,0 +1,34 @@
+* Drawer in the node
+:drawer:
+Text.
+:end:
+
+
+The blank lines above are considered a part of the drawer.
+
+- Item 1
+
+- Item 2
+:drawer:
+inside item 2
+:end:
+- Item 3
+
+** This is a headline
+Still outside the drawer
+:drawername:
+This is inside the drawer.
+:end:
+After the drawer.
+
+* Heading title is a part of the headline element itself <BEGIN>
+
+Text inside heading is considered a part of its CONTENTS and can
+contain other elements recursively.  This paragraph only has CONTENTS,
+no BEGIN, no END, and a BLANK line.
+:drawer:
+The same works at the deeper levels, with this drawer having
+=:drawer:= line as BEGIN, this paragraph belonging to drawer CONTENTS,
+=:end:= representing END, and no BLANK after.
+:end:
+This is the end of the heading, no END exists for headings.

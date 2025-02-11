@@ -1,0 +1,6 @@
+* Welcome to Org-mode
+** Sub-heading
+   Each extra ~*~ increases the depth by one level.
+   
+* TODO Promulgate Org to the world
+** TODO Create a quickstart guide

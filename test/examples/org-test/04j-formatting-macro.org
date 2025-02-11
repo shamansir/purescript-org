@@ -1,0 +1,7 @@
+#+macro: attn _*/$1/*_
+{{{attn(Attention! This text gets all the markup!)}}}
+
+#+html_head: <style>.red{color:red;}</style>
+#+latex_header: \usepackage{xcolor}
+#+macro: red @@html:<span class="red">$1</span>@@@@latex:\textcolor{red}{$1}@@
+Regular text. {{{red(This text will be red.)}}} More regular text.

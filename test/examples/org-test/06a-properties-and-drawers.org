@@ -1,0 +1,50 @@
+* Node Properties
+:NAME: VALUE
+:NAME:
+:NAME+: VALUE
+:NAME+:
+
+:drawer:
+Text.
+:end:
+
+
+The blank lines above are considered a part of the drawer.
+
+- Item 1
+
+- Item 2
+  :drawer:
+  inside item 2
+  :end:
+
+* Heading title is a part of the headline element itself <BEGIN>
+
+
+Text inside heading is considered a part of its CONTENTS and can
+contain other elements recursively.  This paragraph only has CONTENTS,
+no BEGIN, no END, and a BLANK line.
+
+:drawer:
+The same works at the deeper levels, with this drawer having
+=:drawer:= line as BEGIN, this paragraph belonging to drawer CONTENTS,
+=:end:= representing END, and no BLANK after.
+:end:
+This is the end of the heading, no END exists for headings.
+
+
+* Heading
+:PROPERTIES:
+:CUSTOM_ID: someid
+:END:
+
+
+#+KEY: VALUE
+#+KEY[OPTVAL]: VALUE
+#+attr_BACKEND: VALUE
+
+
+#+name: image-name
+#+caption: This is a caption for
+#+caption: the image linked below
+[[file:some/image.png]]

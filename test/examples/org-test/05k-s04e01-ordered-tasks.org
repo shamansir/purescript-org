@@ -1,0 +1,37 @@
+#+SEQ_TODO: NEXT(n/!) TODO(t@/!) WAITING(w@/!) SOMEDAY(s/!) PROJ(p) | DONE(d@) CANCELLED(c)
+#+TAGS: PHONE(o) COMPUTER(c) GARAGE(g) SHOPPING(s) FAMILY(f) URGENT(u)
+#+ARCHIVE: myarchive.org::
+
+* Examples
+** PROJ Orgmode Tutorial Episode 04
+:PROPERTIES:
+:END:
+*** DONE Brainstorming for the topics
+*** PROJ SO1: Ordered Tasks
+:PROPERTIES:
+:END:
+- Show the ordered property
++ If set then you can't close a task until all tasks in the subtree are done
++ Toggle this property with C-c C-x C-o
+**** NEXT Setting up the stage
+**** TODO Record the screencast
+**** TODO Upload to YouTube
+*** PROJ S02: Timers
+:PROPERTIES:
+:END:
+- Countdown timer eg. for Brainstorming
+- Life timer for taking notes with a relative timestamp
+*** PROJ S03: Clocking your work
+*** PROJ S04: Column view intro
+*** PROJ S05: Effort estimates
+
+* PROJ Build a house :ORDERED:
+:PROPERIES:
+:ORDERED: t
+:END:
+** TODO Build the basement
+SCHEDULED <2016-06-27 Mo>
+** TODO Build the ground floor
+SCHEDULED <2016-06-28 Di>
+** TODO Build the roof
+SCHEDULED <2016-06-29 Mi>

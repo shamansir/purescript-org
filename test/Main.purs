@@ -1,11 +1,22 @@
 module Test.Main where
 
-import Prelude
+import Prelude (Unit, ($), discard)
 
 import Effect (Effect)
-import Effect.Class.Console (log)
+import Effect.Aff (launchAff_)
+
+import Test.Spec (describe, describeOnly, pending')
+import Test.Spec.Reporter.Console (consoleReporter)
+import Test.Spec.Runner (runSpec)
+
+-- import Test.Nodes (spec) as Nodes
+import Test.Org.Export.Json (spec) as OrgToJson
+import Test.Org.Export.Org (spec) as OrgToOrg
+
 
 main :: Effect Unit
-main = do
-  log "🍝"
-  log "You should add some tests."
+main = launchAff_ $ runSpec [consoleReporter] do
+  describe "Org : to JSON"
+    OrgToJson.spec
+  describe "Org : to Org"
+    OrgToOrg.spec
