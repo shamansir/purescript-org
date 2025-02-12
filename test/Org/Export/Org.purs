@@ -17,7 +17,7 @@ import Test.Spec.Assertions (shouldEqual)
 
 import Test.Utils as U
 
-import Test.Org.Export.Samples (IndentMode(..), samples)
+import Test.Org.Samples (IndentMode(..), samples)
 
 
 spec :: Spec Unit

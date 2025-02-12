@@ -12,6 +12,7 @@ import Test.Spec.Runner (runSpec)
 -- import Test.Nodes (spec) as Nodes
 import Test.Org.Export.Json (spec) as OrgToJson
 import Test.Org.Export.Org (spec) as OrgToOrg
+import Test.Org.Import.Ebnf (spec) as EbnfJsonToOrg
 
 
 main :: Effect Unit
@@ -20,3 +21,5 @@ main = launchAff_ $ runSpec [consoleReporter] do
     OrgToJson.spec
   describe "Org : to Org"
     OrgToOrg.spec
+  describeOnly "Org : from EBNF JSON"
+    EbnfJsonToOrg.spec

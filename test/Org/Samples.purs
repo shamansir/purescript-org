@@ -1,4 +1,4 @@
-module Test.Org.Export.Samples where
+module Test.Org.Samples where
 
 import Prelude
 
@@ -45,7 +45,7 @@ samples = case _ of
 
 zeroIndentedSamples :: Array Sample
 zeroIndentedSamples =
-    [ { file : Test01.test, slug : "01-empty", friendly : "01. works with the syntax sample" }
+    [ { file : Test01.test, slug : "01-empty", friendly : "01. works with the empty sample" }
     , { file : Test02a.test, slug : "02a-meta", friendly : "02. works with the meta sample (a)" }
     , { file : Test02b.test, slug : "02b-meta-special", friendly : "02. works with the special meta sample (b)" }
     , { file : Test03a.test, slug : "03a-headings-with-no-content", friendly : "03. works with basic headings and levels (a)" }
