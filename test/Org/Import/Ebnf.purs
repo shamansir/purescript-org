@@ -5,6 +5,9 @@ import Prelude
 import Effect.Class (liftEffect, class MonadEffect)
 import Control.Monad.Error.Class (class MonadThrow)
 
+import Data.String (Pattern(..), Replacement(..))
+import Data.String (replace) as String
+
 import Data.Text.Doc as D
 import Data.Text.Format.Org.Types (OrgFile)
 import Data.Text.Format.Org.Render as R

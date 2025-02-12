@@ -11,6 +11,7 @@ import Data.Unfoldable (class Unfoldable)
 import Data.Tuple.Nested ((/\), type (/\))
 import Data.Array ((:))
 import Data.Array (toUnfoldable, length, mapWithIndex, singleton, delete, foldl, foldr, snoc, intersperse) as Array
+import Data.Array.NonEmpty (NonEmptyArray)
 import Data.Array.NonEmpty as NEA
 import Data.String (Pattern(..))
 import Data.String (joinWith, toUpper, split) as String
@@ -80,6 +81,7 @@ db1 = db <<< Array.singleton
 dbs :: Array Block -> Array Section -> OrgDoc
 dbs blocks sections = OrgDoc { zeroth : blocks, sections }
 
+
 -- | update `OrgDoc` inside the `OrgFile` with given function (there's only one root `OrgDoc` inside the file)
 wdoc :: (OrgDoc -> OrgDoc) -> OrgFile -> OrgFile
 wdoc f (OrgFile { meta, doc }) = OrgFile { meta, doc : f doc }
@@ -114,6 +116,21 @@ wlast_bl f (OrgDoc { zeroth, sections }) =
         checkIndex _   block | otherwise = block
 
 
+-- | Perform function over the last `Block` of `OrgDoc` when it exists, or else put given block as the first one
+wlast_bl' :: (Block -> Block) -> Block -> OrgDoc -> OrgDoc
+wlast_bl' f def (OrgDoc { zeroth, sections }) =
+    OrgDoc
+        { zeroth :
+            if Array.length zeroth > 0 then
+                mapWithIndex checkIndex zeroth
+            else Array.singleton def
+        , sections
+        }
+    where
+        checkIndex idx block | idx == (Array.length zeroth - 1) = f block
+        checkIndex _   block | otherwise = block
+
+
 -- | Perform function over the last `Section` of `OrgDoc` when it exists, or leave the document as it is
 wlast_sec :: (Section -> Section) -> OrgDoc -> OrgDoc
 wlast_sec f (OrgDoc { zeroth, sections }) =
@@ -121,6 +138,51 @@ wlast_sec f (OrgDoc { zeroth, sections }) =
     where
         checkIndex idx section | idx == (Array.length sections - 1) = f section
         checkIndex _   section | otherwise = section
+
+
+-- | Perform function over the last `Section` of `OrgDoc` when it exists, or else put given section as the first one
+wlast_sec' :: (Section -> Section) -> Section -> OrgDoc -> OrgDoc
+wlast_sec' f def (OrgDoc { zeroth, sections }) =
+    OrgDoc
+        { zeroth
+        , sections :
+            if Array.length sections > 0 then
+                mapWithIndex checkIndex sections
+            else Array.singleton def
+        }
+    where
+        checkIndex idx section | idx == (Array.length sections - 1) = f section
+        checkIndex _   section | otherwise = section
+
+
+-- | Root document of the file
+docf :: OrgFile -> OrgDoc
+docf (OrgFile { doc }) = doc
+
+
+-- | Root document of the section
+docs :: Section -> OrgDoc
+docs (Section { doc }) = doc
+
+
+-- | Get all the zeroth blocks of given document
+blocks :: OrgDoc -> Array Block
+blocks (OrgDoc { zeroth }) = zeroth
+
+
+-- | Get all the sections of given document
+sections :: OrgDoc -> Array Section
+sections (OrgDoc { sections }) = sections
+
+
+-- | How many sections does this `OrgDoc` have
+sectionsn :: OrgDoc -> Int
+sectionsn = sections >>> Array.length
+
+
+-- | How many blocks does this `OrgDoc` have
+blocksn :: OrgDoc -> Int
+blocksn = blocks >>> Array.length
 
 
 -- | Add meta keyword to the `OrgFile` as the last one
@@ -282,6 +344,11 @@ bdrawer name content = IsDrawer $ Drawer { name, content : __neafws content }
 
 bdrawer1 :: String -> Words -> Block
 bdrawer1 name = bdrawer name <<< Array.singleton
+
+
+-- | join two blocks in one
+joinB :: Block -> Block -> Block
+joinB = JoinB
 
 
 -- | Block of a paragraph with given `Words`
@@ -596,9 +663,14 @@ ssec1 :: Int -> Words -> OrgDoc -> OrgDoc
 ssec1 l = ssec l <<< Array.singleton
 
 
--- | Change heading of the `Section`
+-- | Set heading of the `Section`
 sec_head :: Array Words -> Section -> Section
 sec_head heading =  __qset _ { heading = __neaf (text "") heading }
+
+
+-- | Update heading of the `Section`
+sec_head' :: (NonEmptyArray Words -> NonEmptyArray Words) -> Section -> Section
+sec_head' f (Section sec) = Section $ sec { heading = f sec.heading }
 
 
 -- | Change heading of the `Section`
