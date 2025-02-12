@@ -19,6 +19,7 @@ to generate this file without the comments in this block.
   , "effect"
   , "enums"
   , "foreign"
+  , "integers"
   , "maybe"
   , "prelude"
   , "strings"

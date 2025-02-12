@@ -12,11 +12,13 @@ import Data.Tuple.Nested ((/\), type (/\))
 import Data.Array ((:))
 import Data.Array (toUnfoldable, length, mapWithIndex, singleton, delete, foldl, foldr, snoc, intersperse) as Array
 import Data.Array.NonEmpty as NEA
-import Data.String (joinWith, toUpper) as String
+import Data.String (Pattern(..))
+import Data.String (joinWith, toUpper, split) as String
 import Data.Newtype (unwrap, wrap)
 import Data.Time (Time(..), hour, minute, second) as T
 import Data.Date (Date, canonicalDate) as T
 import Data.Enum (toEnum, fromEnum)
+import Data.Int (fromString) as Int
 import Data.FunctorWithIndex (mapWithIndex)
 
 
@@ -432,6 +434,7 @@ itime = ?wh
 -}
 
 
+-- | Create time from hours and minutes (exactly in this order) numbers with fallback to `bottom` of `Enum` for every invalid integer not in range
 t :: Int -> Int -> T.Time
 t h m = T.Time
             (toEnum h # fromMaybe bottom)
@@ -440,6 +443,16 @@ t h m = T.Time
             bottom
 
 
+-- | Create time from hours and minutes and seconds (exactly in this order) numbers with fallback to `bottom` of `Enum` for every invalid integer not in range
+t' :: Int -> Int -> Int -> T.Time
+t' h m s = T.Time
+            (toEnum h # fromMaybe bottom)
+            (toEnum m # fromMaybe bottom)
+            (toEnum s # fromMaybe bottom)
+            bottom
+
+
+-- | Create a canonical date from year, month and day (exactly in this order) numbers with fallback to `bottom` of `Enum` for every invalid integer not in range
 d :: Int -> Int -> Int -> T.Date
 d year month day =
     T.canonicalDate
@@ -456,7 +469,7 @@ clock t = ClockW $ Clock
             }
 
 
-
+-- | active timestamp with given `Date` and no specific `Time` or repeat / delays
 adate :: T.Date -> OrgDateTime
 adate date =
     OrgDateTime
@@ -468,21 +481,25 @@ adate date =
         }
 
 
+-- | inactive timestamp with given `Date` and no specific `Time` or repeat / delays
 idate :: T.Date -> OrgDateTime
 idate =
     adate >>> unwrap >>> _ { active = false } >>> wrap
 
 
+-- | active timestamp with given `Date` and given `Time` and no repeat / delays
 adatetime :: T.Date -> T.Time -> OrgDateTime
 adatetime date time =
     adate date # at_ time
 
 
+-- | inactive timestamp with given `Date` and given `Time` and no repeat / delays
 idatetime :: T.Date -> T.Time -> OrgDateTime
 idatetime date =
     adatetime date >>> unwrap >>> _ { active = false } >>> wrap
 
 
+-- | change `Time` of the timestamp
 at_ :: T.Time -> OrgDateTime -> OrgDateTime
 at_ time =
     unwrap
@@ -490,6 +507,7 @@ at_ time =
         >>> wrap
 
 
+-- | change `Time` of the timestamp to given range
 fromto :: T.Time -> T.Time -> OrgDateTime -> OrgDateTime
 fromto start end =
     unwrap
@@ -497,6 +515,7 @@ fromto start end =
         >>> wrap
 
 
+-- | change `Dtae` of the timestamp
 chdate :: T.Date -> OrgDateTime -> OrgDateTime
 chdate date =
     unwrap
@@ -504,20 +523,24 @@ chdate date =
         >>> wrap
 
 
+-- | active timestamp with given `Date` and given `Time` range and no repeat / delays
 afromto :: T.Date -> T.Time -> T.Time -> OrgDateTime
 afromto date start end =
     adate date # fromto start end
 
 
+-- | inactive timestamp with given `Date` and given `Time` range and no repeat / delays
 ifromto :: T.Date -> T.Time -> T.Time -> OrgDateTime
 ifromto date start end =
     idate date # fromto start end
 
 
+-- | `Words` contructed from this timestamp
 at :: OrgDateTime -> Words
 at start = DateTime { start, end : Nothing }
 
 
+-- | `Words` contructed from given timestamp
 range :: OrgDateTime -> OrgDateTime -> Words
 range start end = DateTime { start, end : Just end }
 
@@ -676,10 +699,12 @@ diary_r :: String -> OrgTimeRange -> Words
 diary_r expr range = DiaryW $ Diary { expr, time : Just range }
 
 
+-- | create `Time`` range that starts at given time and never ends (it is the same as just stating a time)
 at_r :: T.Time -> OrgTimeRange
 at_r time = OrgTimeRange { start : time, end : Nothing }
 
 
+-- | create `Time`` range that starts at given time and ends and given time
 fromto_r :: T.Time -> T.Time -> OrgTimeRange
 fromto_r start end = OrgTimeRange { start : start, end : Just end }
 
@@ -813,6 +838,8 @@ addSection where_ file _ =
         Root -> -} P.root /\ file
 
 
+-- FIXME: does nothing
+-- | add `Block` to the `OrgFile` at given `Path`
 addBlock :: forall a. Path a -> OrgFile -> Block -> Path a /\ OrgFile
 addBlock where_ file _ = P.root /\ file
 
@@ -828,6 +855,51 @@ addBlock' = addBlock P.root
 isDocEmpty :: OrgDoc -> Boolean
 isDocEmpty (OrgDoc { zeroth, sections }) =
     Array.length zeroth == 0 && Array.length sections == 0
+
+
+parseRepeaterMode :: String -> Maybe RepeaterMode
+parseRepeaterMode = case _ of
+    "+" -> Just Single
+    "++" -> Just FromToday
+    ".+" -> Just Jump
+    _ -> Nothing
+
+
+parseInterval :: String -> Maybe Interval
+parseInterval = case _ of
+    "m" -> Just Month
+    "s" -> Just Year
+    "w" -> Just Week
+    "d" -> Just Day
+    "h" -> Just Hour
+    _ -> Nothing
+
+
+-- | Parse date from `yyyy-MM-dd` string or init or fill it with zeroes on failure
+parseDate :: String -> T.Date
+parseDate dateStr =
+    case String.split (Pattern "-") dateStr of
+        [ yStr, mStr, dStr ] ->
+            d
+                (fromMaybe 0 $ Int.fromString yStr)
+                (fromMaybe 0 $ Int.fromString mStr)
+                (fromMaybe 0 $ Int.fromString dStr)
+        _ -> d 0 0 0
+
+-- | Parse time from `hh:mm` or `hh:mm:ss` string or fill it with zeroes on failure
+parseTime :: String -> T.Time
+parseTime timeStr =
+    case String.split (Pattern ":") timeStr of
+        [ hStr, sStr, xStr ] ->
+            t'
+                (fromMaybe 0 $ Int.fromString hStr)
+                (fromMaybe 0 $ Int.fromString sStr)
+                (fromMaybe 0 $ Int.fromString xStr)
+        [ hStr, sStr ] ->
+            t
+                (fromMaybe 0 $ Int.fromString hStr)
+                (fromMaybe 0 $ Int.fromString sStr)
+        _ -> t 0 0
 
 
 __items :: ListType -> Array Item -> ListItems

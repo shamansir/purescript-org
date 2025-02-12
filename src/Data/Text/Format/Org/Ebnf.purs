@@ -5,7 +5,9 @@ import Prelude
 import Debug as Debug
 
 import Data.Maybe (Maybe(..), maybe, fromMaybe)
-import Data.String (joinWith, length) as String
+import Data.String (Pattern(..))
+import Data.String (joinWith, length, split) as String
+import Data.Int (fromString) as Int
 import Data.Text.Format.Org.Types (OrgFile)
 import Data.Text.Format.Org.Types as Org
 import Data.Text.Format.Org.Construct as Org
@@ -80,10 +82,43 @@ extractFromRoot =
                     sec # Org.sec_wdoc (Org.snoc_bl $ Org.para $ Array.catMaybes $ toWordRule <$> wordsRules)
                 _ -> sec
         applySecHeadRule sec rule =
-            case Debug.spy "sec-rule" rule of
-                Rule "text" wordsRules -> sec # Org.sec_head (Array.catMaybes $ toWordRule <$> wordsRules)
+            case Debug.spy "sec-head-rule" rule of
+                Rule "text" wordsRules ->
+                    sec # Org.sec_head (Array.catMaybes $ toWordRule <$> wordsRules)
+                Rule "planning" planningRules ->
+                    foldl applySecPlanningRule sec planningRules
+                TextRule "keyword" "TODO" ->
+                    sec # Org.set Org.Todo
                 _ -> sec
-
+        applyTimestampRule ts rule =
+            case Debug.spy "timestamp-rule" rule of
+                Rule "ts-inner-w-time"  [ TextRule "ts-date" dateStr, TextRule "ts-day" _, TextRule "ts-time" timeStr ] ->
+                    ts # Org.chdate (Org.parseDate dateStr) # Org.at_ (Org.parseTime timeStr)
+                Rule "ts-inner-wo-time" [ TextRule "ts-date" dateStr, TextRule "ts-day" _ ] ->
+                    ts # Org.chdate (Org.parseDate dateStr)
+                Rule "ts-modifiers" modifiers ->
+                    foldl applyTimestampRule ts modifiers
+                Rule "ts-repeater" [ TextRule "ts-repeater-type" repStr, TextRule "ts-mod-value" valStr, TextRule "ts-mod-unit" unitStr ] ->
+                    ts # Org.repeat
+                        (fromMaybe Org.Single $ Org.parseRepeaterMode repStr)
+                        (fromMaybe 0 $ Int.fromString valStr)
+                        (fromMaybe Org.Day $ Org.parseInterval unitStr)
+                _ -> ts
+        applySecPlanningRule sec rule =
+            case Debug.spy "sec-plan-rule" rule of
+                Rule "planning-info" [ Rule "planning-keyword" kwRules, Rule "timestamp" tsRules ] ->
+                    case kwRules of
+                        [ Rule "planning-kw-deadline" [] ]  -> sec # Org.deadline (buildTimeStamp tsRules)
+                        [ Rule "planning-kw-scheduled" [] ] -> sec # Org.schedule (buildTimeStamp tsRules)
+                        [ Rule "planning-kw-closed" [] ]    -> sec # Org.close    (buildTimeStamp tsRules)
+                        _ -> sec
+                _ -> sec
+            where
+                buildTimeStamp tsRules =
+                    case tsRules of
+                        [ Rule "timestamp-active"   [ Rule "ts-inner" innerTsRules ] ] -> foldl applyTimestampRule (Org.adate $ Org.d 0 0 0) innerTsRules
+                        [ Rule "timestamp-inactive" [ Rule "ts-inner" innerTsRules ] ] -> foldl applyTimestampRule (Org.idate $ Org.d 0 0 0) innerTsRules
+                        _ -> Org.adate $ Org.d 0 0 0
 
 
 instance Show Match where
