@@ -17,6 +17,7 @@ import Data.Newtype (unwrap, wrap)
 import Data.Time (Time(..), hour, minute, second) as T
 import Data.Date (Date, canonicalDate) as T
 import Data.Enum (toEnum, fromEnum)
+import Data.FunctorWithIndex (mapWithIndex)
 
 
 import Data.Text.Format.Org.Types
@@ -32,6 +33,7 @@ prop :: String -> String -> Property
 prop = Keywords.kw
 
 
+-- | Create empty `OrgFile`
 empty :: OrgFile
 empty = f emptyDoc
 
@@ -41,35 +43,85 @@ emptyDoc =
     OrgDoc { zeroth : [], sections : [] }
 
 
+-- | Create `OrgFile` with empty `meta` and given `OrgDoc` as its root
 f :: OrgDoc -> OrgFile
 f = f_ []
 
 
+-- | Create `OrgFile` with given `meta` keywords and given `OrgDoc` as its root
 f_ :: Array Property -> OrgDoc -> OrgFile
 f_ props doc =
     OrgFile { meta : Keywords.make props, doc }
 
 
+-- | create `OrgDoc` from given `Section`s without any preceding blocks
 ds :: Array Section -> OrgDoc
 ds sections = OrgDoc { zeroth : [], sections }
 
 
+-- | create `OrgDoc` from one given `Section` without any preceding blocks
 ds1 :: Section -> OrgDoc
 ds1 = ds <<< Array.singleton
 
 
+-- | create `OrgDoc` from given `Block`s without any following sections
 db :: Array Block -> OrgDoc
 db blocks = OrgDoc { zeroth : blocks, sections : [] }
 
 
+-- | create `OrgDoc` from one given `Block` without any following sections
 db1 :: Block -> OrgDoc
 db1 = db <<< Array.singleton
 
 
+-- | create `OrgDoc` from given `Block`s and `Section`s
 dbs :: Array Block -> Array Section -> OrgDoc
 dbs blocks sections = OrgDoc { zeroth : blocks, sections }
 
+-- | update `OrgDoc` inside the `OrgFile` with given function (there's only one root `OrgDoc` inside the file)
+wdoc :: (OrgDoc -> OrgDoc) -> OrgFile -> OrgFile
+wdoc f (OrgFile { meta, doc }) = OrgFile { meta, doc : f doc }
 
+
+-- | add `Section` in front of other child sections in this `OrgDoc`
+cons_sec :: Section -> OrgDoc -> OrgDoc
+cons_sec sec (OrgDoc { zeroth, sections }) = OrgDoc { zeroth, sections : (sec : sections) }
+
+
+-- | add `Section` as the last of other child sections in this `OrgDoc`
+snoc_sec :: Section -> OrgDoc -> OrgDoc
+snoc_sec sec (OrgDoc { zeroth, sections }) = OrgDoc { zeroth, sections : Array.snoc sections sec }
+
+
+-- | add `Block` in front of other child blocks in this `OrgDoc`
+cons_bl :: Block -> OrgDoc -> OrgDoc
+cons_bl bl (OrgDoc { zeroth, sections }) = OrgDoc { zeroth : ( bl : zeroth), sections }
+
+
+-- | add `Block` as the last of other child blocks in this `OrgDoc`
+snoc_bl :: Block -> OrgDoc -> OrgDoc
+snoc_bl bl (OrgDoc { zeroth, sections }) = OrgDoc { zeroth : Array.snoc zeroth bl, sections }
+
+
+-- | Perform function over the last `Block` of `OrgDoc` when it exists, or leave the document as it is
+wlast_bl :: (Block -> Block) -> OrgDoc -> OrgDoc
+wlast_bl f (OrgDoc { zeroth, sections }) =
+    OrgDoc { zeroth : mapWithIndex checkIndex zeroth, sections }
+    where
+        checkIndex idx block | idx == (Array.length zeroth - 1) = f block
+        checkIndex _   block | otherwise = block
+
+
+-- | Perform function over the last `Section` of `OrgDoc` when it exists, or leave the document as it is
+wlast_sec :: (Section -> Section) -> OrgDoc -> OrgDoc
+wlast_sec f (OrgDoc { zeroth, sections }) =
+    OrgDoc { zeroth, sections : mapWithIndex checkIndex sections }
+    where
+        checkIndex idx section | idx == (Array.length sections - 1) = f section
+        checkIndex _   section | otherwise = section
+
+
+-- | Add meta keyword to the `OrgFile` as the last one
 meta :: String -> String -> OrgFile -> OrgFile
 meta prop val (OrgFile { meta, doc }) =
     OrgFile
@@ -78,6 +130,7 @@ meta prop val (OrgFile { meta, doc }) =
         }
 
 
+-- | Add meta keyword to the `OrgFile` as the first one
 meta_ :: String -> String -> OrgFile -> OrgFile
 meta_ prop val (OrgFile { meta, doc }) =
     OrgFile
@@ -159,12 +212,12 @@ tskip = Empty
 trow :: Array TableColumn -> TableRow
 trow = Row <<< __neaf Empty
 -- trow = Row <<< __neaf Empty <<< map toColumn
---     where 
+--     where
 --         toColumn [] = Empty
 --         toColumn arr = Column $ __neafws arr
 
 
-qrow :: Array Words -> TableRow 
+qrow :: Array Words -> TableRow
 qrow items = trow $ tcol1 <$> items
 
 
@@ -206,14 +259,14 @@ tagi tag (Item opts ws is) =
 
 
 idrawer :: String -> Array Words -> Item -> Item
-idrawer name content (Item rec iws inner) = 
-    Item 
-        (rec 
-            { drawers = 
-                Array.snoc rec.drawers $ Drawer { name, content : __neafws content } 
+idrawer name content (Item rec iws inner) =
+    Item
+        (rec
+            { drawers =
+                Array.snoc rec.drawers $ Drawer { name, content : __neafws content }
             }
         )
-        iws 
+        iws
         inner
 
 
@@ -229,16 +282,24 @@ bdrawer1 :: String -> Words -> Block
 bdrawer1 name = bdrawer name <<< Array.singleton
 
 
+-- | Block of a paragraph with given `Words`
 para :: Array Words -> Block
 para = Paragraph <<< __neafws
 
 
+-- | Block of a paragraph with a single instance of `Words`
 para1 :: Words -> Block
 para1 = Paragraph <<< NEA.singleton
 
 
+-- | Block with no text inside
 blank :: Block
 blank = para1 $ text ""
+
+
+-- | Block only with a line break
+br_blank :: Block
+br_blank = para1 br
 
 
 bold :: MarkupKey
@@ -461,6 +522,7 @@ range :: OrgDateTime -> OrgDateTime -> Words
 range start end = DateTime { start, end : Just end }
 
 
+-- | Create `Section` of the level `l` with given array of `Words` as its heading and attach given `OrgDoc` to it
 sec :: Int -> Array Words -> OrgDoc -> Section
 sec level heading doc =
     Section
@@ -485,25 +547,45 @@ sec level heading doc =
         }
 
 
+-- | Create `Section` of the level `l` with given `Words` as its heading and attach given `OrgDoc` to it
 sec1 :: Int -> Words -> OrgDoc -> Section
 sec1 l = sec l <<< Array.singleton
 
 
+-- | Create empty `Section` (with empty `OrgDoc` in it) of the level `l` with given array of `Words` as its heading
 sece :: Int -> Array Words -> Section
 sece l ws = sec l ws emptyDoc
 
 
+-- | Create empty `Section` (with empty `OrgDoc` in it) of the level `l` with given `Words` as its heading
 sece1 :: Int -> Words -> Section
 sece1 l = sece l <<< Array.singleton
 
 
+-- | Create `OrgDoc` with single `Section` only, of the level `l` with given array of `Words` as its heading
 ssec :: Int -> Array Words -> OrgDoc -> OrgDoc
 ssec level heading doc =
-    ds [ sec level heading doc ]
+    ds <<< Array.singleton $ sec level heading doc
 
 
+-- | Create `OrgDoc` with single `Section` only, of the level `l` with given `Words` as its heading
 ssec1 :: Int -> Words -> OrgDoc -> OrgDoc
 ssec1 l = ssec l <<< Array.singleton
+
+
+-- | Change heading of the `Section`
+sec_head :: Array Words -> Section -> Section
+sec_head heading =  __qset _ { heading = __neaf (text "") heading }
+
+
+-- | Change heading of the `Section`
+sec_head1 :: Words -> Section -> Section
+sec_head1 = sec_head <<< Array.singleton
+
+
+-- | Perform function over the `OrgDoc` inside the section
+sec_wdoc :: (OrgDoc -> OrgDoc) -> Section -> Section
+sec_wdoc f (Section sec) = Section $ sec { doc = f sec.doc }
 
 
 set :: Todo -> Section -> Section
