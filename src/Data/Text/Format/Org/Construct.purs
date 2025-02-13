@@ -82,78 +82,6 @@ dbs :: Array Block -> Array Section -> OrgDoc
 dbs blocks sections = OrgDoc { zeroth : blocks, sections }
 
 
--- | update `OrgDoc` inside the `OrgFile` with given function (there's only one root `OrgDoc` inside the file)
-wdoc :: (OrgDoc -> OrgDoc) -> OrgFile -> OrgFile
-wdoc f (OrgFile { meta, doc }) = OrgFile { meta, doc : f doc }
-
-
--- | add `Section` in front of other child sections in this `OrgDoc`
-cons_sec :: Section -> OrgDoc -> OrgDoc
-cons_sec sec (OrgDoc { zeroth, sections }) = OrgDoc { zeroth, sections : (sec : sections) }
-
-
--- | add `Section` as the last of other child sections in this `OrgDoc`
-snoc_sec :: Section -> OrgDoc -> OrgDoc
-snoc_sec sec (OrgDoc { zeroth, sections }) = OrgDoc { zeroth, sections : Array.snoc sections sec }
-
-
--- | add `Block` in front of other child blocks in this `OrgDoc`
-cons_bl :: Block -> OrgDoc -> OrgDoc
-cons_bl bl (OrgDoc { zeroth, sections }) = OrgDoc { zeroth : ( bl : zeroth), sections }
-
-
--- | add `Block` as the last of other child blocks in this `OrgDoc`
-snoc_bl :: Block -> OrgDoc -> OrgDoc
-snoc_bl bl (OrgDoc { zeroth, sections }) = OrgDoc { zeroth : Array.snoc zeroth bl, sections }
-
-
--- | Perform function over the last `Block` of `OrgDoc` when it exists, or leave the document as it is
-wlast_bl :: (Block -> Block) -> OrgDoc -> OrgDoc
-wlast_bl f (OrgDoc { zeroth, sections }) =
-    OrgDoc { zeroth : mapWithIndex checkIndex zeroth, sections }
-    where
-        checkIndex idx block | idx == (Array.length zeroth - 1) = f block
-        checkIndex _   block | otherwise = block
-
-
--- | Perform function over the last `Block` of `OrgDoc` when it exists, or else put given block as the first one
-wlast_bl' :: (Block -> Block) -> Block -> OrgDoc -> OrgDoc
-wlast_bl' f def (OrgDoc { zeroth, sections }) =
-    OrgDoc
-        { zeroth :
-            if Array.length zeroth > 0 then
-                mapWithIndex checkIndex zeroth
-            else Array.singleton def
-        , sections
-        }
-    where
-        checkIndex idx block | idx == (Array.length zeroth - 1) = f block
-        checkIndex _   block | otherwise = block
-
-
--- | Perform function over the last `Section` of `OrgDoc` when it exists, or leave the document as it is
-wlast_sec :: (Section -> Section) -> OrgDoc -> OrgDoc
-wlast_sec f (OrgDoc { zeroth, sections }) =
-    OrgDoc { zeroth, sections : mapWithIndex checkIndex sections }
-    where
-        checkIndex idx section | idx == (Array.length sections - 1) = f section
-        checkIndex _   section | otherwise = section
-
-
--- | Perform function over the last `Section` of `OrgDoc` when it exists, or else put given section as the first one
-wlast_sec' :: (Section -> Section) -> Section -> OrgDoc -> OrgDoc
-wlast_sec' f def (OrgDoc { zeroth, sections }) =
-    OrgDoc
-        { zeroth
-        , sections :
-            if Array.length sections > 0 then
-                mapWithIndex checkIndex sections
-            else Array.singleton def
-        }
-    where
-        checkIndex idx section | idx == (Array.length sections - 1) = f section
-        checkIndex _   section | otherwise = section
-
 
 -- | Root document of the file
 docf :: OrgFile -> OrgDoc
@@ -224,13 +152,19 @@ example = Of Example <<< __neafws
 
 
 code :: String -> Block
-code str = Of (Code Nothing) $ __neafws [ Plain str ]
--- code = Of $ Code Nothing
+code str = code' [ Plain str ]
+
+
+code' :: Array Words -> Block
+code' = Of (Code Nothing) <<< __neafws
 
 
 codeIn :: String -> String -> Block
-codeIn lang str = Of (Code $ Just $ Language lang) $ __neafws [ Plain str ]
--- codeIn = Of <<< Code <<< Just <<< ?wh <<< Language
+codeIn lang str = codeIn' lang [ Plain str ]
+
+
+codeIn' :: String -> Array Words -> Block
+codeIn' lang = Of (Code $ Just $ Language lang) <<< __neafws
 
 
 bcomment :: Array String -> Block
@@ -896,6 +830,7 @@ traverse join f (OrgDoc doc) =
     where deepF (Section sec) = Section sec /\ traverse join f sec.doc
 
 
+{-
 findBlock :: forall a. BoundedEnum a => OrgFile -> Path a -> Maybe Block
 findBlock file path = Nothing
 
@@ -906,8 +841,8 @@ findSection file path = Nothing
 
 addSection :: forall a. Path a -> OrgFile -> Section -> Path a /\ OrgFile
 addSection where_ file _ =
-    {- case where_ of
-        Root -> -} P.root /\ file
+    case where_ of
+        Root -> P.root /\ file
 
 
 -- FIXME: does nothing
@@ -922,6 +857,127 @@ addSection' = addSection P.root
 
 addBlock' :: forall a. OrgFile -> Block -> Path a /\ OrgFile
 addBlock' = addBlock P.root
+-}
+
+
+-- | update `OrgDoc` inside the `OrgFile` with given function (there's only one root `OrgDoc` inside the file)
+wdoc :: (OrgDoc -> OrgDoc) -> OrgFile -> OrgFile
+wdoc f (OrgFile { meta, doc }) = OrgFile { meta, doc : f doc }
+
+
+-- | add `Section` in front of other child sections in this `OrgDoc`
+cons_sec :: Section -> OrgDoc -> OrgDoc
+cons_sec sec (OrgDoc { zeroth, sections }) = OrgDoc { zeroth, sections : (sec : sections) }
+
+
+-- | add `Section` as the last of other child sections in this `OrgDoc`
+snoc_sec :: Section -> OrgDoc -> OrgDoc
+snoc_sec sec (OrgDoc { zeroth, sections }) = OrgDoc { zeroth, sections : Array.snoc sections sec }
+
+
+-- | add `Block` in front of other child blocks in this `OrgDoc`
+cons_bl :: Block -> OrgDoc -> OrgDoc
+cons_bl bl (OrgDoc { zeroth, sections }) = OrgDoc { zeroth : ( bl : zeroth), sections }
+
+
+-- | add `Block` as the last of other child blocks in this `OrgDoc`
+snoc_bl :: Block -> OrgDoc -> OrgDoc
+snoc_bl bl (OrgDoc { zeroth, sections }) = OrgDoc { zeroth : Array.snoc zeroth bl, sections }
+
+
+-- | Perform function over the last `Block` of `OrgDoc` when it exists, or leave the document as it is
+wlast_bl :: (Block -> Block) -> OrgDoc -> OrgDoc
+wlast_bl f (OrgDoc { zeroth, sections }) =
+    OrgDoc { zeroth : mapWithIndex checkIndex zeroth, sections }
+    where
+        checkIndex idx block | idx == (Array.length zeroth - 1) = f block
+        checkIndex _   block | otherwise = block
+
+
+-- | Perform function over the last `Block` of `OrgDoc` when it exists, or else put given block as the first one
+wlast_bl' :: (Block -> Block) -> Block -> OrgDoc -> OrgDoc
+wlast_bl' f def (OrgDoc { zeroth, sections }) =
+    OrgDoc
+        { zeroth :
+            if Array.length zeroth > 0 then
+                mapWithIndex checkIndex zeroth
+            else Array.singleton def
+        , sections
+        }
+    where
+        checkIndex idx block | idx == (Array.length zeroth - 1) = f block
+        checkIndex _   block | otherwise = block
+
+
+-- | Perform function over the last `Section` of `OrgDoc` when it exists, or leave the document as it is
+wlast_sec :: (Section -> Section) -> OrgDoc -> OrgDoc
+wlast_sec f (OrgDoc { zeroth, sections }) =
+    OrgDoc { zeroth, sections : mapWithIndex checkIndex sections }
+    where
+        checkIndex idx section | idx == (Array.length sections - 1) = f section
+        checkIndex _   section | otherwise = section
+
+
+-- | Perform function over the last `Section` of `OrgDoc` when it exists, or else put given section as the first one
+wlast_sec' :: (Section -> Section) -> Section -> OrgDoc -> OrgDoc
+wlast_sec' f def (OrgDoc { zeroth, sections }) =
+    OrgDoc
+        { zeroth
+        , sections :
+            if Array.length sections > 0 then
+                mapWithIndex checkIndex sections
+            else Array.singleton def
+        }
+    where
+        checkIndex idx section | idx == (Array.length sections - 1) = f section
+        checkIndex _   section | otherwise = section
+
+
+-- | _Recursively_ (going into sections, unlike `wlast_bl` and `wlast_bl'`) find the last block and call given function with it; if `OrgDoc` is empty, do nothing
+wlast_bl_rec :: (Block -> Block) -> OrgDoc -> OrgDoc
+wlast_bl_rec f doc =
+    if sectionsn doc > 0 then
+        doc # (wlast_sec $ sec_wdoc $ wlast_bl_rec f)
+    else
+        if blocksn doc > 0 then
+            doc # wlast_bl f
+        else
+            doc
+
+
+-- | Ensure to append given block to the current end of the root document of the file
+append_bl :: Block -> OrgFile -> OrgFile
+append_bl = wdoc <<< append_bl'
+
+
+-- | Ensure to append given block to the end of the given document
+append_bl' :: Block -> OrgDoc -> OrgDoc
+append_bl' block doc =
+    if sectionsn doc > 0 then
+        doc # (wlast_sec $ sec_wdoc $ snoc_bl block)
+    else
+        if blocksn doc > 0 then
+            doc # (wlast_bl $ flip joinB block)
+        else
+            doc # snoc_bl block
+
+-- | If `Block` can directly contain words (`Of`, `Drawer`, `Footnote`, `Paragraph`, `WithKeyword`, `FixedWidth`, but neither `List` or `Table` or `HR` or `LComment`)
+-- | add given words to the end of the block
+inject_words :: Array Words -> Block -> Block
+inject_words words = case _ of
+    Of kind curWords -> Of kind $ NEA.appendArray curWords words
+    IsDrawer (Drawer { name, content }) ->
+        IsDrawer $ Drawer { name, content : NEA.appendArray content words }
+    Footnote name curWords -> Footnote name $ NEA.appendArray curWords words
+    List list -> List list
+    Table title table -> Table title table
+    HRule -> HRule
+    Paragraph curWords -> Paragraph $ NEA.appendArray curWords words
+    WithKeyword kw block -> WithKeyword kw $ inject_words words block
+    LComment lines -> LComment lines
+    FixedWidth curWords -> FixedWidth $ NEA.appendArray curWords words
+    JoinB blockA blockB -> JoinB blockA $ inject_words words blockB
+
 
 
 isDocEmpty :: OrgDoc -> Boolean

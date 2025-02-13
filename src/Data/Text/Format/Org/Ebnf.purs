@@ -54,48 +54,74 @@ extractFromRoot :: Rule -> OrgFile
 extractFromRoot =
     case _ of
         Rule "S" rules ->
-            foldl applySub Org.empty rules
+            _.orgf $ foldl applySub { orgf : Org.empty, insideKBlock : false } rules
         _ -> Org.empty
     where
 
-        applySub orgf rule = case Debug.spy "rule" rule of
+        applySub { orgf, insideKBlock } rule = case Debug.spy "rule" rule of
             Rule "other-keyword-line" [ TextRule "kw-name" kwTitle, TextRule "kw-value" kwValue ] ->
-                orgf # Org.meta kwTitle kwValue
+                { orgf : orgf # Org.meta kwTitle kwValue
+                , insideKBlock
+                }
             Rule "headline" hlRules ->
-                fromMaybe orgf $ Array.uncons hlRules <#> \{ head, tail } ->
+                { orgf : fromMaybe orgf $ Array.uncons hlRules <#> \{ head, tail } ->
                     case head of
                         TextRule "stars" val ->
                             orgf # Org.wdoc
                                 (Org.snoc_sec $ foldl applySecHeadRule (Org.sece (String.length val) []) tail)
                         _ -> orgf
+                , insideKBlock
+                }
             Rule "content-line" contentRules ->
-                if (Org.sectionsn $ Org.docf orgf) > 0 then
-                    orgf # Org.wdoc (Org.wlast_sec $ \sec -> foldl applySecContentRule sec contentRules)
-                else
-                    if (Org.blocksn $ Org.docf orgf) > 0 then
-                        orgf # Org.wdoc (Org.wlast_bl $ \block -> foldl applyBlockContentRule block contentRules)
+                { orgf :
+                    if not insideKBlock then
+                        orgf # Org.append_bl (blockFrom $ _extractWordsRules contentRules)
                     else
-                        orgf # Org.wdoc (Org.snoc_bl $ blockFrom $ extractWordsRules contentRules)
+                        orgf # Org.wdoc (Org.wlast_bl_rec $ Org.inject_words $ wordsFromRules contentRules)
+                , insideKBlock
+                }
             Rule "empty-line" [] ->
-                Org.wdoc (Org.wlast_sec $ Org.sec_wdoc $ Org.snoc_bl $ Org.blank) orgf
-            _ -> orgf
+                { orgf : orgf # Org.append_bl Org.blank
+                , insideKBlock
+                }
+            TextRule "horizontal-rule" _ ->
+                { orgf : orgf # Org.append_bl Org.hr
+                , insideKBlock
+                }
+            Rule "block-begin-line" [ TextRule "block-name" name ] ->
+                { orgf : case name of
+                    "src"     -> orgf # Org.append_bl (Org.code' [])
+                    "quote"   -> orgf # Org.append_bl (Org.quote [])
+                    "example" -> orgf # Org.append_bl (Org.example [])
+                    _ -> orgf
+                , insideKBlock : true
+                }
+            Rule "block-begin-line" [ TextRule "block-name" name, TextRule "block-parameters" params ] ->
+                { orgf : case name of
+                    "src" -> Org.wdoc (Org.snoc_bl $ Org.codeIn' params []) orgf
+                    _ -> orgf
+                , insideKBlock : true
+                }
+            Rule "block-end-line" [ TextRule "block-name" name ] ->
+                { orgf
+                , insideKBlock : false
+                }
+            TextRule "fixed-width-line" fwLine ->
+                { orgf : orgf # Org.append_bl (Org.fw [ Org.text fwLine ])
+                , insideKBlock
+                }
+            _ -> { orgf, insideKBlock }
 
-        applySecContentRule sec rule =
-            case Debug.spy "sec-rule" rule of
-                Rule "text" wordsRules ->
-                    sec # Org.sec_wdoc (Org.snoc_bl $ blockFrom wordsRules)
-                _ -> sec
-
-        applyBlockContentRule block rule =
-            case Debug.spy "block-rule" rule of
-                Rule "text" wordsRules ->
-                    Org.joinB block $ blockFrom wordsRules
-                _ -> block
+        _extractWordsRules contentRules =
+            case Debug.spy "content-rules" contentRules of
+                [ Rule "text" wordsRules ] ->
+                    wordsRules
+                _ -> []
 
         applySecHeadRule sec rule =
             case Debug.spy "sec-head-rule" rule of
                 Rule "text" wordsRules ->
-                    sec # Org.sec_head (Array.catMaybes $ toWordRule <$> wordsRules)
+                    sec # Org.sec_head (wordsFromRules wordsRules)
                 Rule "planning" planningRules ->
                     foldl applySecPlanningRule sec planningRules
                 TextRule "keyword" "TODO" ->
@@ -155,7 +181,7 @@ extractFromRoot =
                         [ Rule "timestamp-inactive" [ Rule "ts-inner" innerTsRules ] ] -> foldl applyTimestampRule (Org.idate $ Org.d 0 0 0) innerTsRules
                         _ -> Org.adate $ Org.d 0 0 0
 
-        toWordRule rule =
+        toWordsFromRule rule =
             case Debug.spy "word-rule" rule of
                 TextRule "text-normal" textVal ->
                     Just $ Org.Plain textVal
@@ -189,13 +215,10 @@ extractFromRoot =
                 [ Rule "link-ext" [ Rule "link-ext-other" [ TextRule "link-url-scheme" linkScheme, TextRule "link-url-rest" linkRest ] ] ] -> Org.rem $ linkScheme <> ":" <> linkRest
                 _ -> Org.rem "LINK"
 
-        blockFrom wordsRules =
-            Org.para $ Array.catMaybes $ toWordRule <$> wordsRules
+        wordsFromRules wordsRules = Array.catMaybes $ toWordsFromRule <$> wordsRules
 
-        extractWordsRules trule = -- FIXME: used only once, if document is empty
-            case Debug.spy "extract-rule" trule of
-                [ Rule "text" wordsRules ] -> wordsRules
-                _ -> []
+        blockFrom =
+            Org.para <<< wordsFromRules
 
 
 
