@@ -54,14 +54,14 @@ extractFromRoot :: Rule -> OrgFile
 extractFromRoot =
     case _ of
         Rule "S" rules ->
-            _.orgf $ foldl applySub { orgf : Org.empty, insideKBlock : false } rules
+            _.orgf $ foldl applySub { orgf : Org.empty, insideKBlock : false, nextLine : false } rules
         _ -> Org.empty
     where
 
-        applySub { orgf, insideKBlock } rule = case Debug.spy "rule" rule of
+        applySub { orgf, insideKBlock, nextLine } rule = case Debug.spy "rule" rule of
             Rule "other-keyword-line" [ TextRule "kw-name" kwTitle, TextRule "kw-value" kwValue ] ->
                 { orgf : orgf # Org.meta kwTitle kwValue
-                , insideKBlock
+                , insideKBlock, nextLine : false
                 }
             Rule "headline" hlRules ->
                 { orgf : fromMaybe orgf $ Array.uncons hlRules <#> \{ head, tail } ->
@@ -70,23 +70,27 @@ extractFromRoot =
                             orgf # Org.wdoc
                                 (Org.snoc_sec $ foldl applySecHeadRule (Org.sece (String.length val) []) tail)
                         _ -> orgf
-                , insideKBlock
+                , insideKBlock, nextLine : false
                 }
             Rule "content-line" contentRules ->
                 { orgf :
-                    if not insideKBlock then
+                    if Debug.spy "not inside block" $ not insideKBlock then
                         orgf # Org.append_bl (blockFrom $ _extractWordsRules contentRules)
                     else
-                        orgf # Org.wdoc (Org.wlast_bl_rec $ Org.inject_words $ wordsFromRules contentRules)
-                , insideKBlock
+                        let
+                            wordsToAdd = wordsFromRules $ _extractWordsRules contentRules
+                            wordsToAdd' = if nextLine then Org.br : wordsToAdd else wordsToAdd -- a kind of hack to add breaks to the contents of the blocks
+                        in
+                            orgf # Org.wdoc (Org.wlast_bl_rec $ Org.inject_words $ Debug.spy "words-to-inject" wordsToAdd')
+                , insideKBlock, nextLine : insideKBlock -- if inside the block, it could be next line in the block
                 }
             Rule "empty-line" [] ->
                 { orgf : orgf # Org.append_bl Org.blank
-                , insideKBlock
+                , insideKBlock, nextLine : insideKBlock
                 }
             TextRule "horizontal-rule" _ ->
                 { orgf : orgf # Org.append_bl Org.hr
-                , insideKBlock
+                , insideKBlock, nextLine : insideKBlock
                 }
             Rule "block-begin-line" [ TextRule "block-name" name ] ->
                 { orgf : case name of
@@ -94,23 +98,23 @@ extractFromRoot =
                     "quote"   -> orgf # Org.append_bl (Org.quote [])
                     "example" -> orgf # Org.append_bl (Org.example [])
                     _ -> orgf
-                , insideKBlock : true
+                , insideKBlock : true, nextLine : false -- it is the first line
                 }
             Rule "block-begin-line" [ TextRule "block-name" name, TextRule "block-parameters" params ] ->
                 { orgf : case name of
                     "src" -> Org.wdoc (Org.snoc_bl $ Org.codeIn' params []) orgf
                     _ -> orgf
-                , insideKBlock : true
+                , insideKBlock : true, nextLine : false -- it is the first line
                 }
             Rule "block-end-line" [ TextRule "block-name" name ] ->
                 { orgf
-                , insideKBlock : false
+                , insideKBlock : false, nextLine : false -- it is the last line
                 }
             TextRule "fixed-width-line" fwLine ->
                 { orgf : orgf # Org.append_bl (Org.fw [ Org.text fwLine ])
-                , insideKBlock
+                , insideKBlock, nextLine : insideKBlock
                 }
-            _ -> { orgf, insideKBlock }
+            _ -> { orgf, insideKBlock, nextLine }
 
         _extractWordsRules contentRules =
             case Debug.spy "content-rules" contentRules of

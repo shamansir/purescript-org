@@ -273,6 +273,7 @@ layoutWords = case _ of
             )
         "]"
     Org.JoinW wa wb -> layoutWords wa <> layoutWords wb
+    Org.EmptyW -> D.nil
     where
         markWith mk doc = case mk of
             Org.Bold -> D.wrap "*" doc

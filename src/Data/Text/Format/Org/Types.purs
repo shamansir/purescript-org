@@ -86,6 +86,7 @@ data Words
     -- | Space
     -- | Indent Int
     | JoinW Words Words
+    | EmptyW -- a stub for having `NonEmptyArray` at places, TODO: may be we could either get rid of it or don't require NEA at all
 
 
 data BlockKind
@@ -670,7 +671,7 @@ toNEA a = NEA.fromArray >>> fromMaybe (NEA.singleton a)
 
 
 importWords :: Array Words -> NonEmptyArray Words
-importWords = toNEA $ Plain "??" -- FIXME: use some default `Words`
+importWords = toNEA $ EmptyW -- FIXME: use some default `Words`
 exportWords :: NonEmptyArray Words -> Array Words
 exportWords = NEA.toArray >>> flattenWords
 
@@ -727,10 +728,10 @@ blockToVariant = case _ of
     HRule -> Variant.select (Proxy :: _ "hr")
     FixedWidth words -> Variant.select1 (Proxy :: _ "fixed") $ exportWords words
     LComment lines -> Variant.select1 (Proxy :: _ "comment") lines
-    WithKeyword _ _ -> Variant.select2 (Proxy :: _ "kind") Quote [ Plain "QQQ" ] -- Keywords are handled on top level
+    WithKeyword _ _ -> Variant.select2 (Proxy :: _ "kind") Quote [ Plain "ERR" ] -- Keywords are handled on top level
     List (ListItems listType items) -> Variant.select2 (Proxy :: _ "list") (toVariant listType) $ exportItems items
     Table mbFormat rows -> Variant.select1 (Proxy :: _ "table") { format : mbFormat, rows : exportRows rows }
-    JoinB _ _ -> Variant.select2 (Proxy :: _ "kind") Quote [ Plain "QQQ" ] -- Joins are handled on top level
+    JoinB _ _ -> Variant.select2 (Proxy :: _ "kind") Quote [ Plain "ERR" ] -- Joins are handled on top level
 
 
 blockFromVariant :: Variant BlockRow -> Block
@@ -928,6 +929,7 @@ type WordsRow =
     , break :: Case
     , marked :: Case2 (Array (Variant MarkupKeyRow)) String
     , fnref :: Case2 String (Maybe String) -- FIXME: since using Words here is causing recursion to fail
+    , empty :: Case
     -- , join :: Words /\ Words
     )
 
@@ -947,6 +949,7 @@ readWords =
         , clock : Variant.use1 $ ClockW <<< wrap
         , break : Variant.use Break
         , fnref : Variant.use2 $ \label def -> FootnoteRef { label, def }
+        , empty : Variant.use EmptyW
         -- , join : Variant.use2 JoinW
         }
 
@@ -964,7 +967,8 @@ wordsToVariant = case _ of
     DiaryW diary -> Variant.select1 (Proxy :: _ "diary") $ convert diary
     Break -> Variant.select (Proxy :: _ "break")
     FootnoteRef { label, def } -> Variant.select2 (Proxy :: _ "fnref") label def
-    JoinW wA wB -> Variant.select1 (Proxy :: _ "plain") "JOIN" -- FIXME
+    JoinW wA wB -> Variant.select1 (Proxy :: _ "plain") "JOIN" -- FIXME: (we're flattening words before exporting, aren't we?)
+    EmptyW -> Variant.select (Proxy :: _ "empty")
 
 
 wordsFromVariant :: Variant WordsRow -> Words
@@ -982,6 +986,7 @@ wordsFromVariant =
         , break : Variant.uncase Break
         , fnref : Variant.uncase2 >>> Tuple.uncurry (\label def -> { label, def }) >>> FootnoteRef
         -- , join : Variant.uncase2 JoinW  -- FIXME
+        , empty : Variant.uncase EmptyW
         }
 
 
@@ -1609,7 +1614,7 @@ emptySection =
         , priority : Nothing
         , cookie : Nothing
         , check : Nothing
-        , heading : NEA.singleton $ Plain "$$" -- FIXME: TODO
+        , heading : NEA.singleton $ EmptyW
         , level : -1
         , tags : []
         , planning : emptyPlanning

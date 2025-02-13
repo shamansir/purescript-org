@@ -1037,6 +1037,7 @@ __items lt = ListItems lt <<<  __neaf (item [])
 __qset f (Section sec) = Section $ f sec --  unwrap >>> f >> wrap
 
 
+__qplan ∷ ({ closed ∷ Maybe OrgDateTime , deadline ∷ Maybe OrgDateTime , scheduled ∷ Maybe OrgDateTime , timestamp ∷ Maybe OrgDateTime } → { closed ∷ Maybe OrgDateTime , deadline ∷ Maybe OrgDateTime , scheduled ∷ Maybe OrgDateTime , timestamp ∷ Maybe OrgDateTime } ) → Section → Section
 __qplan f =
     __qset $ \sec -> sec { planning = Planning $ f $ case sec.planning of Planning p -> f p }
 
@@ -1044,4 +1045,4 @@ __qplan f =
 __neaf def = fromMaybe (NEA.singleton def) <<< NEA.fromArray
 
 
-__neafws = __neaf $ Plain "\n" -- FIXME: see Types.importWords
+__neafws = __neaf $ EmptyW -- FIXME: see Types.importWords
