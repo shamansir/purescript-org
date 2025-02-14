@@ -710,13 +710,27 @@ wprop_ prop = __qset $ \sec -> sec { props = Keywords.qpushon sec.props prop }
 
 
 drawer :: String -> Array Words -> Section -> Section
-drawer name content = __qset $ \sec -> sec { drawers = Array.snoc sec.drawers $ Drawer { name, content : __neafws content } } -- FIXME
+drawer name content = sec_append_drawer $ mk_drawer name content
 
 
 drawer1 :: String -> Words -> Section -> Section
-drawer1 name content = __qset $ \sec -> sec { drawers = Array.snoc sec.drawers $ Drawer { name, content : NEA.singleton content } } -- FIXME
+drawer1 name content = sec_append_drawer $ mk_drawer' name $ NEA.singleton content
 
 
+mk_drawer :: String -> Array Words -> Drawer
+mk_drawer name = mk_drawer' name <<< __neafws
+
+
+mk_drawer' :: String -> NonEmptyArray Words -> Drawer
+mk_drawer' name content = Drawer { name, content }
+
+
+
+-- | Add words to the drawer
+drawer_add ::  Array Words  -> Drawer -> Drawer
+drawer_add nextContent (Drawer { name, content }) = Drawer { name, content : NEA.appendArray content nextContent }
+
+{-
 wlast_drawer :: (Drawer -> Drawer) -> Section -> Section
 wlast_drawer f (Section sec) =
     Section $ sec { drawers = mapWithIndex checkIndex sec.drawers }
@@ -728,6 +742,11 @@ wlast_drawer f (Section sec) =
 drawer_append :: Array Words -> Section -> Section
 drawer_append nextContent =
     wlast_drawer $ \(Drawer { name, content }) -> Drawer { name, content : NEA.appendArray content nextContent }
+-}
+
+-- | Append drawer as the last one into the section
+sec_append_drawer :: Drawer -> Section -> Section
+sec_append_drawer drawer = __qset $ \sec -> sec { drawers = Array.snoc sec.drawers drawer } -- FIXME
 
 
 note :: String -> Section -> Section

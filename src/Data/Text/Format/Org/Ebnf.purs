@@ -49,12 +49,16 @@ toRule =
                         Text rName -> Just $ Rule rName $ Array.catMaybes $ toRule <$> tail
                         _ -> Nothing
 
+data ContentTarget
+    = TopLevel
+    | Block { empty :: Boolean } Org.Block
+    | Drawer Org.Drawer
+    -- List ?
+
 
 type State =
     { orgf :: OrgFile
-    , insideKBlock :: Boolean -- is inside block of some kind `Of Kind ...`
-    , nextLine :: Boolean -- is next line should also belongs to the block
-    , insideDrawer :: Boolean -- is indide drawer
+    , target :: ContentTarget
     }
 
 
@@ -62,9 +66,7 @@ init :: State
 init =
      -- TODO: may be just store current block to collect the changes in the state and actually add it in the end
     { orgf : Org.empty
-    , insideKBlock : false
-    , nextLine : false
-    , insideDrawer : false
+    , target : TopLevel
     }
 
 
@@ -76,10 +78,10 @@ extractFromRoot =
         _ -> Org.empty
     where
 
-        applySub { orgf, insideKBlock, nextLine, insideDrawer } rule = case Debug.spy "rule" rule of
+        applySub { orgf,target } rule = case Debug.spy "rule" rule of
             Rule "other-keyword-line" [ TextRule "kw-name" kwTitle, TextRule "kw-value" kwValue ] ->
                 { orgf : orgf # Org.meta kwTitle kwValue
-                , insideKBlock, nextLine : false, insideDrawer : false
+                , target
                 }
             Rule "headline" hlRules ->
                 { orgf : fromMaybe orgf $ Array.uncons hlRules <#> \{ head, tail } ->
@@ -88,10 +90,14 @@ extractFromRoot =
                             orgf # Org.wdoc
                                 (Org.snoc_sec $ foldl applySecHeadRule (Org.sece (String.length val) []) tail)
                         _ -> orgf
-                , insideKBlock, nextLine : false, insideDrawer : false
+                , target
                 }
             Rule "content-line" contentRules ->
                 { orgf :
+                    case target of
+                        TopLevel -> orgf # Org.append_bl (blockFrom $ _extractWordsRules contentRules) -- TODO: also collect to `ContentTarget` before?
+                        _ -> orgf
+                    {-
                     if Debug.spy "not inside block or drawer" $ not insideKBlock && not insideDrawer then
                         orgf # Org.append_bl (blockFrom $ _extractWordsRules contentRules)
                     else
@@ -105,59 +111,68 @@ extractFromRoot =
                                 orgf # Org.wdoc (Org.wlast_sec $ Org.drawer_append $ Debug.spy "drawer-words-to-inject" wordsToAdd')
                             else
                                 orgf -- shouldn't be inside block and inside drawer at the same time
-                , nextLine : insideKBlock -- if inside the block, it could be next line in the block
-                , insideDrawer, insideKBlock
+                    -}
+                , target :
+                    case target of
+                        TopLevel -> target
+                        Block { empty } block ->
+                            let
+                                wordsToAdd = wordsFromRules $ _extractWordsRules contentRules
+                                wordsToAdd' = if not empty then Org.br : wordsToAdd else wordsToAdd -- a kind of hack to add breaks to the contents of the blocks
+                            in
+                                Block { empty : false } $ Org.inject_words (Debug.spy "block-words-to-inject" wordsToAdd') block
+                        Drawer drawer ->
+                            let
+                                wordsToAdd = wordsFromRules $ _extractWordsRules contentRules
+                                -- wordsToAdd' = if not empty then Org.br : wordsToAdd else wordsToAdd -- a kind of hack to add breaks to the contents of the blocks
+                            in
+                                Drawer $ Org.drawer_add (Debug.spy "drawer-words-to-inject" wordsToAdd) drawer
                 }
             Rule "empty-line" [] ->
                 { orgf : orgf # Org.append_bl Org.blank
-                , insideKBlock, nextLine : insideKBlock, insideDrawer
+                , target
                 }
             TextRule "horizontal-rule" _ ->
                 { orgf : orgf # Org.append_bl Org.hr
-                , insideKBlock, nextLine : insideKBlock
-                , insideDrawer : false
+                , target
                 }
             Rule "block-begin-line" [ TextRule "block-name" name ] ->
-                { orgf : case name of
-                    "src"     -> orgf # Org.append_bl (Org.code' [])
-                    "quote"   -> orgf # Org.append_bl (Org.quote [])
-                    "example" -> orgf # Org.append_bl (Org.example [])
-                    "comment" -> orgf # Org.append_bl (Org.bcomment [])
-                    _ -> orgf
-                , insideKBlock : true, nextLine : false -- it is the first line
-                , insideDrawer : false
+                { orgf
+                , target : case name of
+                    "src"     -> Block { empty : true } $ Org.code' [] -- orgf # Org.append_bl
+                    "quote"   -> Block { empty : true } $ Org.quote [] -- orgf # Org.append_bl
+                    "example" -> Block { empty : true } $ Org.example [] -- orgf # Org.append_bl
+                    "comment" -> Block { empty : true } $ Org.bcomment [] -- orgf # Org.append_bl
+                    _ -> TopLevel
                 }
             Rule "block-begin-line" [ TextRule "block-name" name, TextRule "block-parameters" params ] ->
-                { orgf : case name of
-                    "src" -> Org.wdoc (Org.snoc_bl $ Org.codeIn' params []) orgf
-                    _ -> orgf
-                , insideKBlock : true, nextLine : false -- it is the first line
-                , insideDrawer : false
+                { orgf
+                , target : case name of
+                    "src" -> Block { empty : true } $ Org.codeIn' params [] -- # Org.wdoc (Org.snoc_bl $ Org.codeIn' params []) orgf
+                    _ -> target
                 }
             Rule "block-end-line" [ TextRule "block-name" name ] ->
-                { orgf
-                , insideKBlock : false, nextLine : false -- it is the last line
-                , insideDrawer : false
+                { orgf :
+                    case target of
+                        Block _ block -> orgf # Org.append_bl block
+                        _ -> orgf -- should not happen
+                , target : TopLevel
                 }
             TextRule "fixed-width-line" fwLine ->
                 { orgf : orgf # Org.append_bl (Org.fw [ Org.text fwLine ])
-                , insideKBlock, nextLine : insideKBlock
-                , insideDrawer : false
+                , target
                 }
             Rule "list-item-line" liRules ->
                 { orgf : orgf # Org.append_bl (Org.det_item $ foldl applyListItemRule Org.emptyDetItem liRules)
-                , insideKBlock, nextLine
-                , insideDrawer : false -- TODO: ?
+                , target
                 }
             Rule "footnote-line" [ TextRule "fn-label" fnLabel, Rule "text" wordsRules ] ->
                 { orgf : orgf # Org.append_bl (Org.fn_ fnLabel $ wordsFromRules wordsRules)
-                , insideKBlock, nextLine
-                , insideDrawer : false -- TODO: ?
+                , target
                 }
             Rule "comment-line" [ TextRule "comment-line-head" commentHead, TextRule "comment-line-rest" commentRest ] ->
                 { orgf : orgf # Org.append_bl (Org.lcomment [ String.drop 1 commentRest ])
-                , insideKBlock, nextLine
-                , insideDrawer : false -- TODO: ?
+                , target
                 }
             Rule "drawer-begin-line" [ TextRule "drawer-name" drawerName ] ->
                 let
@@ -165,6 +180,13 @@ extractFromRoot =
                     isDrawerEnd = String.toLower drawerName == "end"
                 in
                 { orgf :
+                    if isDrawerEnd then
+                        case target of
+                            Drawer drawer ->
+                                orgf # Org.wdoc (Org.wlast_sec $ Org.sec_append_drawer drawer)
+                            _ -> orgf -- should not happen
+                    else orgf
+                    {-
                     let
                         addDrawer :: Org.Section -> Org.Section
                         addDrawer sec =
@@ -173,9 +195,8 @@ extractFromRoot =
                                     sec # Org.sec_wdoc (Org.wlast_bl_rec $ const $ Org.DetachedItem $ Org.DetachedListItem ltype indent props words)
                                 _ -> sec # Org.drawer drawerName []
                     in
-                        if not isDrawerEnd then orgf # Org.wdoc (Org.wlast_sec addDrawer) else orgf
-                , insideKBlock, nextLine
-                , insideDrawer : not isDrawerEnd
+                        if not isDrawerEnd then orgf # Org.wdoc (Org.wlast_sec addDrawer) else orgf -}
+                , target : if not isDrawerEnd then Drawer $ Org.mk_drawer drawerName [] else TopLevel
                 }
             Rule "clock" [ Rule "timestamp-inactive-range" [ startTsRule, endTsRule ], Rule "clock-duration" [ TextRule "clock-dur-hh" hhDurValue, TextRule "clock-dur-mm" mmDurValue ] ] ->
                 { orgf : orgf # Org.append_bl
@@ -185,7 +206,7 @@ extractFromRoot =
                             (fromMaybe 0 $ Int.fromString hhDurValue)
                             (fromMaybe 0 $ Int.fromString mmDurValue)
                         )
-                , insideKBlock, nextLine, insideDrawer
+                , target
                 }
             Rule "clock" [ Rule "timestamp-active-range" [ startTsRule, endTsRule ], Rule "clock-duration" [ TextRule "clock-dur-hh" hhDurValue, TextRule "clock-dur-mm" mmDurValue ] ] ->
                 { orgf : orgf # Org.append_bl
@@ -195,9 +216,9 @@ extractFromRoot =
                             (fromMaybe 0 $ Int.fromString hhDurValue)
                             (fromMaybe 0 $ Int.fromString mmDurValue)
                         )
-                , insideKBlock, nextLine, insideDrawer
+                , target
                 }
-            _ -> { orgf, insideKBlock, nextLine, insideDrawer }
+            _ -> { orgf, target }
 
         _extractWordsRules contentRules =
             case Debug.spy "content-rules" contentRules of
