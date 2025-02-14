@@ -118,6 +118,10 @@ extractFromRoot =
                 { orgf : orgf # Org.append_bl (Org.det_item $ foldl applyListItemRule Org.emptyDetItem liRules)
                 , insideKBlock, nextLine
                 }
+            Rule "footnote-line" [ TextRule "fn-label" fnLabel, Rule "text" wordsRules ] ->
+                { orgf : orgf # Org.append_bl (Org.fn_ fnLabel $ wordsFromRules wordsRules)
+                , insideKBlock, nextLine
+                }
             _ -> { orgf, insideKBlock, nextLine }
 
         _extractWordsRules contentRules =
@@ -242,6 +246,12 @@ extractFromRoot =
                     let
                         _ = Debug.spyWith "link-rules" show linkRules
                     in Just $ Org.ref (createLinkTarget linkRules)
+                Rule "footnote-link" [ TextRule "fn-label" label ] ->
+                    Just $ Org.fn label
+                Rule "footnote-link" [ TextRule "fn-label" label, RuleMatch text ] ->
+                    Just $ Org.fndef label text
+                TextRule "footnote-link" defText ->
+                    Just $ Org.fndef' defText
                 _ -> Nothing
 
         createLinkTarget linkRules =
