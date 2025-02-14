@@ -6,7 +6,7 @@ import Debug as Debug
 
 import Data.Maybe (Maybe(..), maybe, fromMaybe)
 import Data.String (Pattern(..))
-import Data.String (joinWith, length, split, uncons, codePointFromChar) as String
+import Data.String (joinWith, length, split, uncons, codePointFromChar, drop) as String
 import Data.String.CodePoints as SCP
 import Data.String.CodeUnits as SCU
 import Data.Int (fromString) as Int
@@ -97,6 +97,7 @@ extractFromRoot =
                     "src"     -> orgf # Org.append_bl (Org.code' [])
                     "quote"   -> orgf # Org.append_bl (Org.quote [])
                     "example" -> orgf # Org.append_bl (Org.example [])
+                    "comment" -> orgf # Org.append_bl (Org.bcomment [])
                     _ -> orgf
                 , insideKBlock : true, nextLine : false -- it is the first line
                 }
@@ -120,6 +121,10 @@ extractFromRoot =
                 }
             Rule "footnote-line" [ TextRule "fn-label" fnLabel, Rule "text" wordsRules ] ->
                 { orgf : orgf # Org.append_bl (Org.fn_ fnLabel $ wordsFromRules wordsRules)
+                , insideKBlock, nextLine
+                }
+            Rule "comment-line" [ TextRule "comment-line-head" commentHead, TextRule "comment-line-rest" commentRest ] ->
+                { orgf : orgf # Org.append_bl (Org.lcomment [ String.drop 1 commentRest ])
                 , insideKBlock, nextLine
                 }
             _ -> { orgf, insideKBlock, nextLine }
