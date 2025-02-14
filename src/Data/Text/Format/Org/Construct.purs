@@ -474,6 +474,18 @@ clock t = ClockW $ Clock
             }
 
 
+clockB :: OrgDateTime -> OrgDateTime -> Int -> Int -> Block
+clockB start end hh mm =
+    para
+        [ text "CLOCK: "
+        , range
+            start
+            end
+        , text " "
+        , clock $ t hh mm
+        ] -- FIXME: create a block variation for it
+
+
 -- | active timestamp with given `Date` and no specific `Time` or repeat / delays
 adate :: T.Date -> OrgDateTime
 adate date =
@@ -1038,10 +1050,17 @@ parseRepeaterMode = case _ of
     _ -> Nothing
 
 
+parseDelayMode :: String -> Maybe DelayMode
+parseDelayMode = case _ of
+    "-" -> Just One
+    "--" -> Just All
+    _ -> Nothing
+
+
 parseInterval :: String -> Maybe Interval
 parseInterval = case _ of
     "m" -> Just Month
-    "s" -> Just Year
+    "y" -> Just Year
     "w" -> Just Week
     "d" -> Just Day
     "h" -> Just Hour

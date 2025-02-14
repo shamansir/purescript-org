@@ -127,6 +127,26 @@ extractFromRoot =
                 { orgf : orgf # Org.append_bl (Org.lcomment [ String.drop 1 commentRest ])
                 , insideKBlock, nextLine
                 }
+            Rule "clock" [ Rule "timestamp-inactive-range" [ startTsRule, endTsRule ], Rule "clock-duration" [ TextRule "clock-dur-hh" hhDurValue, TextRule "clock-dur-mm" mmDurValue ] ] ->
+                { orgf : orgf # Org.append_bl
+                        (Org.clockB
+                            (applyTimestampRule (Org.idate $ Org.d 0 0 0) startTsRule)
+                            (applyTimestampRule (Org.idate $ Org.d 0 0 0) endTsRule)
+                            (fromMaybe 0 $ Int.fromString hhDurValue)
+                            (fromMaybe 0 $ Int.fromString mmDurValue)
+                        )
+                , insideKBlock, nextLine
+                }
+            Rule "clock" [ Rule "timestamp-active-range" [ startTsRule, endTsRule ], Rule "clock-duration" [ TextRule "clock-dur-hh" hhDurValue, TextRule "clock-dur-mm" mmDurValue ] ] ->
+                { orgf : orgf # Org.append_bl
+                        (Org.clockB
+                            (applyTimestampRule (Org.adate $ Org.d 0 0 0) startTsRule)
+                            (applyTimestampRule (Org.adate $ Org.d 0 0 0) endTsRule)
+                            (fromMaybe 0 $ Int.fromString hhDurValue)
+                            (fromMaybe 0 $ Int.fromString mmDurValue)
+                        )
+                , insideKBlock, nextLine
+                }
             _ -> { orgf, insideKBlock, nextLine }
 
         _extractWordsRules contentRules =
@@ -208,6 +228,19 @@ extractFromRoot =
                         (fromMaybe Org.Single $ Org.parseRepeaterMode repStr)
                         (fromMaybe 0 $ Int.fromString valStr)
                         (fromMaybe Org.Day $ Org.parseInterval unitStr)
+                Rule "ts-repeater" [ TextRule "ts-repeater-type" repStr, TextRule "ts-mod-value" valStr, TextRule "ts-mod-unit" unitStr, Rule "ts-mod-at-least" [ TextRule "ts-mod-value" wValStr, TextRule "ts-mod-unit" wUnitStr ] ] ->
+                    ts # Org.repeat
+                        (fromMaybe Org.Single $ Org.parseRepeaterMode repStr)
+                        (fromMaybe 0 $ Int.fromString valStr)
+                        (fromMaybe Org.Day $ Org.parseInterval unitStr)
+                       # Org.rwith
+                        (fromMaybe 0 $ Int.fromString wValStr)
+                        (fromMaybe Org.Day $ Org.parseInterval wUnitStr)
+                Rule "ts-warning" [ TextRule "ts-warning-type" delStr, TextRule "ts-mod-value" valStr, TextRule "ts-mod-unit" unitStr ] ->
+                    ts # Org.delay
+                        (fromMaybe Org.One $ Org.parseDelayMode delStr)
+                        (fromMaybe 0 $ Int.fromString valStr)
+                        (fromMaybe Org.Day $ Org.parseInterval unitStr)
                 _ -> ts
 
         applySecPlanningRule sec rule =
@@ -219,12 +252,12 @@ extractFromRoot =
                         [ Rule "planning-kw-closed" [] ]    -> sec # Org.close    (buildTimeStamp tsRules)
                         _ -> sec
                 _ -> sec
-            where
-                buildTimeStamp tsRules =
-                    case tsRules of
-                        [ Rule "timestamp-active"   [ Rule "ts-inner" innerTsRules ] ] -> foldl applyTimestampRule (Org.adate $ Org.d 0 0 0) innerTsRules
-                        [ Rule "timestamp-inactive" [ Rule "ts-inner" innerTsRules ] ] -> foldl applyTimestampRule (Org.idate $ Org.d 0 0 0) innerTsRules
-                        _ -> Org.adate $ Org.d 0 0 0
+
+        buildTimeStamp tsRules =
+            case tsRules of
+                [ Rule "timestamp-active"   [ Rule "ts-inner" innerTsRules ] ] -> foldl applyTimestampRule (Org.adate $ Org.d 0 0 0) innerTsRules
+                [ Rule "timestamp-inactive" [ Rule "ts-inner" innerTsRules ] ] -> foldl applyTimestampRule (Org.idate $ Org.d 0 0 0) innerTsRules
+                _ -> Org.adate $ Org.d 0 0 0
 
         toWordsFromRule rule =
             case Debug.spy "word-rule" rule of
@@ -257,6 +290,10 @@ extractFromRoot =
                     Just $ Org.fndef label text
                 TextRule "footnote-link" defText ->
                     Just $ Org.fndef' defText
+                Rule "timestamp" [ TextRule "timestamp-diary" diaryValue ] ->
+                    Just $ Org.diary diaryValue
+                Rule "timestamp" tsRules ->
+                    Just $ Org.at $ buildTimeStamp tsRules
                 _ -> Nothing
 
         createLinkTarget linkRules =
