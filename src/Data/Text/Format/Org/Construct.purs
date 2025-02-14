@@ -10,7 +10,7 @@ import Data.Foldable (class Foldable)
 import Data.Unfoldable (class Unfoldable)
 import Data.Tuple.Nested ((/\), type (/\))
 import Data.Array ((:))
-import Data.Array (toUnfoldable, length, mapWithIndex, singleton, delete, foldl, foldr, snoc, intersperse) as Array
+import Data.Array (toUnfoldable, length, mapWithIndex, singleton, delete, foldl, foldr, snoc, intersperse, last) as Array
 import Data.Array.NonEmpty (NonEmptyArray)
 import Data.Array.NonEmpty as NEA
 import Data.String (Pattern(..))
@@ -710,11 +710,24 @@ wprop_ prop = __qset $ \sec -> sec { props = Keywords.qpushon sec.props prop }
 
 
 drawer :: String -> Array Words -> Section -> Section
-drawer name content = __qset $ \sec -> sec { drawers = Drawer { name, content : __neafws content } : sec.drawers } -- FIXME
+drawer name content = __qset $ \sec -> sec { drawers = Array.snoc sec.drawers $ Drawer { name, content : __neafws content } } -- FIXME
 
 
 drawer1 :: String -> Words -> Section -> Section
-drawer1 name content = __qset $ \sec -> sec { drawers = Drawer { name, content : NEA.singleton content } : sec.drawers } -- FIXME
+drawer1 name content = __qset $ \sec -> sec { drawers = Array.snoc sec.drawers $ Drawer { name, content : NEA.singleton content } } -- FIXME
+
+
+wlast_drawer :: (Drawer -> Drawer) -> Section -> Section
+wlast_drawer f (Section sec) =
+    Section $ sec { drawers = mapWithIndex checkIndex sec.drawers }
+    where
+        checkIndex idx drawer | idx == (Array.length sec.drawers - 1) = f drawer
+        checkIndex _   drawer | otherwise = drawer
+
+
+drawer_append :: Array Words -> Section -> Section
+drawer_append nextContent =
+    wlast_drawer $ \(Drawer { name, content }) -> Drawer { name, content : NEA.appendArray content nextContent }
 
 
 note :: String -> Section -> Section
@@ -911,6 +924,14 @@ cons_bl bl (OrgDoc { zeroth, sections }) = OrgDoc { zeroth : ( bl : zeroth), sec
 -- | add `Block` as the last of other child blocks in this `OrgDoc`
 snoc_bl :: Block -> OrgDoc -> OrgDoc
 snoc_bl bl (OrgDoc { zeroth, sections }) = OrgDoc { zeroth : Array.snoc zeroth bl, sections }
+
+
+last_bl_of :: OrgDoc -> Maybe Block
+last_bl_of (OrgDoc { zeroth, sections }) =
+    if Array.length sections > 0 then
+        Array.last sections >>= (last_bl_of <<< docs)
+    else
+        Array.last zeroth
 
 
 -- | Perform function over the last `Block` of `OrgDoc` when it exists, or leave the document as it is

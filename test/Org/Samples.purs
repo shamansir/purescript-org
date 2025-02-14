@@ -63,7 +63,7 @@ zeroIndentedSamples =
     , { file : Test04f.test, slug : "04f-formatting-comments", friendly : "04. formatting: comments (f)" }
     , { file : Test04g.test, slug : "04g-formatting-dates", friendly : "04. formatting: dates (g)" }
     -- , { file : Test04h.test, slug : "04h-formatting-properties-and-keywords", friendly : "04. formatting: properties & keywords (h)" }
-    -- , { file : Test04i.test, slug : "04i-formatting-drawers", friendly : "04. formatting: drawers (i)" }
+    , { file : Test04i.test, slug : "04i-formatting-drawers", friendly : "04. formatting: drawers (i)" }
     ]
 
 
