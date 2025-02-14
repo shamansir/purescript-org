@@ -52,7 +52,7 @@ toRule =
 data ContentTarget
     = TopLevel
     | Block { empty :: Boolean } Org.Block
-    | Drawer Org.Drawer
+    | Drawer { empty :: Boolean } Org.Drawer
     -- List ?
 
 
@@ -121,12 +121,12 @@ extractFromRoot =
                                 wordsToAdd' = if not empty then Org.br : wordsToAdd else wordsToAdd -- a kind of hack to add breaks to the contents of the blocks
                             in
                                 Block { empty : false } $ Org.inject_words (Debug.spy "block-words-to-inject" wordsToAdd') block
-                        Drawer drawer ->
+                        Drawer { empty } drawer ->
                             let
                                 wordsToAdd = wordsFromRules $ _extractWordsRules contentRules
-                                -- wordsToAdd' = if not empty then Org.br : wordsToAdd else wordsToAdd -- a kind of hack to add breaks to the contents of the blocks
+                                wordsToAdd' = if not empty then Org.br : wordsToAdd else wordsToAdd -- a kind of hack to add breaks to the contents of the blocks
                             in
-                                Drawer $ Org.drawer_add (Debug.spy "drawer-words-to-inject" wordsToAdd) drawer
+                                Drawer { empty : false } $ Org.drawer_add (Debug.spy "drawer-words-to-inject" wordsToAdd') drawer
                 }
             Rule "empty-line" [] ->
                 { orgf : orgf # Org.append_bl Org.blank
@@ -182,8 +182,18 @@ extractFromRoot =
                 { orgf :
                     if isDrawerEnd then
                         case target of
-                            Drawer drawer ->
-                                orgf # Org.wdoc (Org.wlast_sec $ Org.sec_append_drawer drawer)
+                            Drawer _ drawer ->
+                                let
+                                    addDrawer :: Org.Section -> Org.Section
+                                    addDrawer sec =
+                                        case Org.last_bl_of $ Org.docs sec of
+                                            Just (Org.DetachedItem dlitem) ->
+                                                sec # Org.sec_wdoc (Org.wlast_bl_rec $ const $ Org.DetachedItem $ Org.det_add_drawer drawer dlitem)
+                                            Just someBlock ->
+                                                sec # Org.append_bl_sec (Org.IsDrawer drawer)
+                                            Nothing -> sec # Org.sec_append_drawer drawer
+                                in
+                                    orgf # Org.wdoc (Org.wlast_sec addDrawer)
                             _ -> orgf -- should not happen
                     else orgf
                     {-
@@ -196,7 +206,7 @@ extractFromRoot =
                                 _ -> sec # Org.drawer drawerName []
                     in
                         if not isDrawerEnd then orgf # Org.wdoc (Org.wlast_sec addDrawer) else orgf -}
-                , target : if not isDrawerEnd then Drawer $ Org.mk_drawer drawerName [] else TopLevel
+                , target : if not isDrawerEnd then Drawer { empty : true } $ Org.mk_drawer drawerName [] else TopLevel
                 }
             Rule "clock" [ Rule "timestamp-inactive-range" [ startTsRule, endTsRule ], Rule "clock-duration" [ TextRule "clock-dur-hh" hhDurValue, TextRule "clock-dur-mm" mmDurValue ] ] ->
                 { orgf : orgf # Org.append_bl

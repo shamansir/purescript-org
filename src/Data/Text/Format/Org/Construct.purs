@@ -277,11 +277,15 @@ idrawer1 name = idrawer name <<< Array.singleton
 
 
 bdrawer :: String -> Array Words -> Block
-bdrawer name content = IsDrawer $ Drawer { name, content : __neafws content }
+bdrawer name = bdrawer' <<< mk_drawer name
 
 
 bdrawer1 :: String -> Words -> Block
 bdrawer1 name = bdrawer name <<< Array.singleton
+
+
+bdrawer' :: Drawer -> Block
+bdrawer' = IsDrawer
 
 
 -- | join two blocks in one
@@ -935,12 +939,12 @@ snoc_sec :: Section -> OrgDoc -> OrgDoc
 snoc_sec sec (OrgDoc { zeroth, sections }) = OrgDoc { zeroth, sections : Array.snoc sections sec }
 
 
--- | add `Block` in front of other child blocks in this `OrgDoc`
+-- | add `Block` in front of other child blocks in this `OrgDoc` in its zeroth section
 cons_bl :: Block -> OrgDoc -> OrgDoc
 cons_bl bl (OrgDoc { zeroth, sections }) = OrgDoc { zeroth : ( bl : zeroth), sections }
 
 
--- | add `Block` as the last of other child blocks in this `OrgDoc`
+-- | add `Block` as the last of other child blocks in this `OrgDoc` in its zeroth section
 snoc_bl :: Block -> OrgDoc -> OrgDoc
 snoc_bl bl (OrgDoc { zeroth, sections }) = OrgDoc { zeroth : Array.snoc zeroth bl, sections }
 
@@ -1022,12 +1026,17 @@ append_bl = wdoc <<< append_bl'
 append_bl' :: Block -> OrgDoc -> OrgDoc
 append_bl' block doc =
     if sectionsn doc > 0 then
-        doc # (wlast_sec $ sec_wdoc $ snoc_bl block)
+        doc # (wlast_sec $ append_bl_sec block)
     else
         if blocksn doc > 0 then
             doc # (wlast_bl $ flip joinB block)
         else
             doc # snoc_bl block
+
+
+append_bl_sec :: Block -> Section -> Section
+append_bl_sec = sec_wdoc <<< snoc_bl
+
 
 -- | If `Block` can directly contain words (`Of`, `Drawer`, `Footnote`, `DetachedItem`, `Paragraph`, `WithKeyword`, `FixedWidth`, but neither `List` or or `Table` or `HR` or `LComment` or `ClockB`)
 -- | add given words to the end of the block
@@ -1088,6 +1097,11 @@ det_drawers drawers (DetachedListItem ltype indent props ws) =
 det_add_text :: Array Words -> DetachedListItem -> DetachedListItem
 det_add_text words (DetachedListItem ltype indent props curWords) =
     DetachedListItem ltype indent props $ NEA.appendArray curWords words
+
+
+det_add_drawer :: Drawer -> DetachedListItem -> DetachedListItem
+det_add_drawer drawer (DetachedListItem ltype indent props ws) =
+    DetachedListItem ltype indent (props { drawers = Array.snoc props.drawers drawer }) ws
 
 
 isDocEmpty :: OrgDoc -> Boolean

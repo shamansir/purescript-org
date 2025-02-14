@@ -438,7 +438,7 @@ layoutItemsWith ro parentSubj deep lt items  =
                 </> layoutItems ro indentSubj nextDeep subs
         itemMaybeWithDrawers idx item@(Org.Item opts _ _) =
             itemLine idx item
-            <> if hasDrawers opts then drawers idx opts else D.nil
+            <> if hasDrawers opts then D.break <> drawers idx opts else D.nil
         hasDrawers opts =
             Array.length opts.drawers > 0
         drawers idx opts =
