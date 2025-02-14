@@ -175,6 +175,10 @@ list :: ListType -> Array Item -> Block
 list lt = List <<< __items lt
 
 
+det_item :: DetachedListItem -> Block
+det_item = DetachedItem
+
+
 item :: Array Words -> Item
 item ws =
     Item
@@ -961,7 +965,7 @@ append_bl' block doc =
         else
             doc # snoc_bl block
 
--- | If `Block` can directly contain words (`Of`, `Drawer`, `Footnote`, `Paragraph`, `WithKeyword`, `FixedWidth`, but neither `List` or `Table` or `HR` or `LComment`)
+-- | If `Block` can directly contain words (`Of`, `Drawer`, `Footnote`, `DetachedItem`, `Paragraph`, `WithKeyword`, `FixedWidth`, but neither `List` or or `Table` or `HR` or `LComment`)
 -- | add given words to the end of the block
 inject_words :: Array Words -> Block -> Block
 inject_words words = case _ of
@@ -970,6 +974,8 @@ inject_words words = case _ of
         IsDrawer $ Drawer { name, content : NEA.appendArray content words }
     Footnote name curWords -> Footnote name $ NEA.appendArray curWords words
     List list -> List list
+    DetachedItem (DetachedListItem def indent props curWords) ->
+        DetachedItem $ DetachedListItem def indent props $ NEA.appendArray curWords words
     Table title table -> Table title table
     HRule -> HRule
     Paragraph curWords -> Paragraph $ NEA.appendArray curWords words
@@ -978,6 +984,40 @@ inject_words words = case _ of
     FixedWidth curWords -> FixedWidth $ NEA.appendArray curWords words
     JoinB blockA blockB -> JoinB blockA $ inject_words words blockB
 
+
+det_indent :: String -> DetachedListItem -> DetachedListItem
+det_indent indent (DetachedListItem ltype _ props ws) =
+    DetachedListItem ltype { mbIndent : Just indent } props ws
+
+
+det_ltype :: ListType -> DetachedListItem -> DetachedListItem
+det_ltype ltype (DetachedListItem _ indent props ws) =
+    DetachedListItem ltype indent props ws
+
+
+det_check :: Check -> DetachedListItem -> DetachedListItem
+det_check check (DetachedListItem ltype indent props ws) =
+    DetachedListItem ltype indent (props { check = Just check }) ws
+
+
+det_counter :: Counter -> DetachedListItem -> DetachedListItem
+det_counter counter (DetachedListItem ltype indent props ws) =
+    DetachedListItem ltype indent (props { counter = Just counter }) ws
+
+
+det_tag :: String -> DetachedListItem -> DetachedListItem
+det_tag tag (DetachedListItem ltype indent props ws) =
+    DetachedListItem ltype indent (props { tag = Just tag }) ws
+
+
+det_drawers :: Array Drawer -> DetachedListItem -> DetachedListItem
+det_drawers drawers (DetachedListItem ltype indent props ws) =
+    DetachedListItem ltype indent (props { drawers = drawers }) ws
+
+
+det_add_text :: Array Words -> DetachedListItem -> DetachedListItem
+det_add_text words (DetachedListItem ltype indent props curWords) =
+    DetachedListItem ltype indent props $ NEA.appendArray curWords words
 
 
 isDocEmpty :: OrgDoc -> Boolean

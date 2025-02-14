@@ -7,9 +7,9 @@ import Data.Array.NonEmpty as NEA
 import Data.Char (fromCharCode)
 import Data.Date (Date, day, month, weekday, year)  as DT
 import Data.Enum (fromEnum)
-import Data.Maybe (Maybe(..), fromMaybe, isJust)
+import Data.Maybe (Maybe(..), maybe, fromMaybe, isJust)
 import Data.Newtype (unwrap)
-import Data.String (toUpper, toLower, take) as String
+import Data.String (toUpper, toLower, take, length) as String
 import Data.String.CodeUnits (singleton) as String
 import Data.Time (Time, hour, minute) as DT
 import Data.Tuple.Nested ((/\))
@@ -87,6 +87,14 @@ layoutBlock ro deep = case _ of
                     </> D.indentBy indent endLine
     Org.List items ->
         layoutItems ro (Items deep) deep items
+    Org.DetachedItem ditem@(Org.DetachedListItem ltype { mbIndent } _ _) ->
+        let
+            deep' = case deep of Deep n -> Deep $ n + maybe 0 String.length mbIndent
+        in
+            layoutItems ro (Items deep') deep'
+                $ Org.ListItems ltype
+                $ NEA.singleton
+                $ Org.itemFromDetached ditem
     Org.Table format rows ->
         layoutTable $ NEA.toArray rows
     Org.Paragraph words ->

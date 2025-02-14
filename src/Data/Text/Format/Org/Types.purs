@@ -12,6 +12,7 @@ import Data.Array as Array
 import Data.Array.NonEmpty (NonEmptyArray)
 import Data.Array.NonEmpty as NEA
 import Data.String (CodePoint)
+import Data.String (length) as String
 import Data.Map (Map)
 import Data.Map as Map
 import Data.Date (Date, Weekday, canonicalDate)
@@ -29,11 +30,11 @@ import Data.Newtype (class Newtype, wrap, unwrap)
 import Data.Bifunctor (lmap, bimap)
 
 import Yoga.JSON (class ReadForeign, class WriteForeign, class ReadForeignFields, class WriteForeignFields, class ReadForeignVariant, class WriteForeignVariant, readImpl, writeImpl, writeJSON)
-import Yoga.Json.Extra (Case, Case1, Case2, readMatchImpl)
+import Yoga.Json.Extra (Case, Case1, Case2, Case3, Case4, readMatchImpl)
 import Yoga.Json.Extra
-    ( use, use1, use2
-    , select, select1, select2, todo
-    , uncase, uncase1, uncase2
+    ( use, use1, use2, use3, use4
+    , select, select1, select2, select3, select4, todo
+    , uncase, uncase1, uncase2, uncase3, uncase4
     ) as Variant
 
 import Data.Text.Format.Org.Keywords (Keywords, JsonKeywords, fromKeywords, toKeywords)
@@ -62,6 +63,7 @@ data Block
     -- | Centered (NonEmptyArray Words) -- TODO
     | Footnote String (NonEmptyArray Words)
     | List ListItems
+    | DetachedItem DetachedListItem
     | Table (Maybe String) (NonEmptyArray TableRow)
     | Paragraph (NonEmptyArray Words)
     | WithKeyword Keyword Block
@@ -278,13 +280,25 @@ data TableColumn = Empty | Column (NonEmptyArray Words)
 data ListItems = ListItems ListType (NonEmptyArray Item)
 
 
+data DetachedListItem =
+    DetachedListItem
+        ListType
+        { mbIndent :: Maybe String }
+        ListItemProps
+        (NonEmptyArray Words)
+
+
+type ListItemProps =
+    { check :: Maybe Check
+    , counter :: Maybe Counter
+    , tag :: Maybe String
+    , drawers :: Array Drawer
+    }
+
+
 data Item =
     Item
-        { check :: Maybe Check
-        , counter :: Maybe Counter
-        , tag :: Maybe String
-        , drawers :: Array Drawer
-        }
+        ListItemProps
         (NonEmptyArray Words)
         (Maybe ListItems)
 
@@ -523,6 +537,10 @@ emptyItem =
         Nothing
 
 
+emptyDetItem :: DetachedListItem
+emptyDetItem = detachedFromItem "" Bulleted emptyItem
+
+
 type JsonListItemsRow =
     ( type_ :: Variant ListTypeRow
     , values :: Array JsonListItem
@@ -586,6 +604,28 @@ loadListItem (JsonListItem item) =
         }
         (importWords $ item.words)
         $ loadListItems <$> item.children
+
+
+itemFromDetached :: DetachedListItem -> Item
+itemFromDetached (DetachedListItem _ _ props words) =
+    Item props words Nothing
+
+
+detachedFromItem :: String -> ListType -> Item -> DetachedListItem
+detachedFromItem indent ltype (Item props words _) =
+    DetachedListItem
+        ltype
+        { mbIndent : if String.length indent > 0 then Just indent else Nothing }
+        props
+        words
+
+
+convertDetachedItem :: DetachedListItem -> JsonListItem
+convertDetachedItem = itemFromDetached >>> convertListItem
+
+
+loadDetachedItem :: String -> ListType -> JsonListItem -> DetachedListItem
+loadDetachedItem indent ltype = loadListItem >>> detachedFromItem indent ltype
 
 
 type BlockKindRow =
@@ -658,6 +698,7 @@ type BlockRow =
     , fixed :: Case1 (Array Words)
     , comment :: Case1 (Array String)
     , list :: Case2 (Variant ListTypeRow) (Array JsonListItem)
+    , litem :: Case3 (Variant ListTypeRow) String JsonListItem
     , table :: Case1 { format :: Maybe String, rows :: JsonRows }
     )
 
@@ -715,6 +756,7 @@ readBlock =
         , fixed : Variant.use1 $ FixedWidth <<< importWords
         , comment : Variant.use1 LComment
         , list : Variant.use2 $ \ltype items -> List $ ListItems (fromVariant ltype) $ importItems items
+        , litem : Variant.use3 $ \ltype ident itemdef -> DetachedItem $ loadDetachedItem ident (fromVariant ltype) itemdef
         , table : Variant.use1 $ \{ format, rows } -> Table format $ importRows rows
         }
 
@@ -730,6 +772,7 @@ blockToVariant = case _ of
     LComment lines -> Variant.select1 (Proxy :: _ "comment") lines
     WithKeyword _ _ -> Variant.select2 (Proxy :: _ "kind") Quote [ Plain "ERR" ] -- Keywords are handled on top level
     List (ListItems listType items) -> Variant.select2 (Proxy :: _ "list") (toVariant listType) $ exportItems items
+    DetachedItem ditem@(DetachedListItem ltype { mbIndent } _ _) -> Variant.select3 (Proxy :: _ "litem") (toVariant ltype) (fromMaybe "" mbIndent) $ convertDetachedItem ditem
     Table mbFormat rows -> Variant.select1 (Proxy :: _ "table") { format : mbFormat, rows : exportRows rows }
     JoinB _ _ -> Variant.select2 (Proxy :: _ "kind") Quote [ Plain "ERR" ] -- Joins are handled on top level
 
@@ -745,6 +788,7 @@ blockFromVariant =
         , footnote : Variant.uncase2 >>> map importWords >>> Tuple.uncurry Footnote
         , comment : Variant.uncase1 >>> LComment
         , list : Variant.uncase2 >>> Tuple.uncurry \ltype items -> List $ ListItems (fromVariant ltype) $ importItems items
+        , litem : Variant.uncase3 >>> \(ltype /\ indent /\ def) -> DetachedItem $ loadDetachedItem indent (fromVariant ltype) def
         , table : Variant.uncase1 >>> \{ format, rows } -> Table format $ importRows rows
         }
 

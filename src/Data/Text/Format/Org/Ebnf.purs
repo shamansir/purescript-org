@@ -15,7 +15,7 @@ import Data.Text.Format.Org.Types as Org
 import Data.Text.Format.Org.Construct as Org
 import Data.Foldable (foldl)
 import Data.Array ((:))
-import Data.Array (head, catMaybes, uncons) as Array
+import Data.Array (head, catMaybes, uncons, singleton) as Array
 
 import Control.Alt ((<|>))
 
@@ -114,6 +114,10 @@ extractFromRoot =
                 { orgf : orgf # Org.append_bl (Org.fw [ Org.text fwLine ])
                 , insideKBlock, nextLine : insideKBlock
                 }
+            Rule "list-item-line" liRules ->
+                { orgf : orgf # Org.append_bl (Org.det_item $ foldl applyListItemRule Org.emptyDetItem liRules)
+                , insideKBlock, nextLine
+                }
             _ -> { orgf, insideKBlock, nextLine }
 
         _extractWordsRules contentRules =
@@ -121,6 +125,29 @@ extractFromRoot =
                 [ Rule "text" wordsRules ] ->
                     wordsRules
                 _ -> []
+
+        _extractListType = case _ of
+            "*" -> Org.Bulleted
+            "-" -> Org.Hyphened
+            "+" -> Org.Plussed
+            _ -> Org.Bulleted
+
+        _extractCheckboxType = case _ of
+            "X" -> Org.Check
+            "-" -> Org.Halfcheck
+            " " -> Org.Uncheck
+            _ -> Org.Uncheck
+
+        applyListItemRule litem rule =
+            case Debug.spy "list-rule" rule of
+                TextRule "indent" indent -> litem # Org.det_indent indent
+                TextRule "list-item-bullet" bullet -> litem # Org.det_ltype (_extractListType bullet)
+                TextRule "list-item-counter" counter -> litem -- # Org.det_counter
+                TextRule "list-item-counter-suffix" suffix -> litem -- TODO
+                TextRule "list-item-tag" tag -> litem # Org.det_tag tag
+                Rule "list-item-checkbox" [ TextRule "list-item-checkbox-state" cbState ] -> litem # Org.det_check (_extractCheckboxType cbState)
+                Rule "text" textRules -> litem # Org.det_add_text (wordsFromRules textRules)
+                _ -> litem
 
         applySecHeadRule sec rule =
             case Debug.spy "sec-head-rule" rule of
