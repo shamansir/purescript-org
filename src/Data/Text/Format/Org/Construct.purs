@@ -474,6 +474,17 @@ clock t = ClockW $ Clock
             }
 
 
+
+clockB :: OrgDateTime -> OrgDateTime -> Int -> Int -> Block
+clockB start end hh mm =
+    let cl_time = t hh mm in
+    ClockB { start, end : Just end } $ Clock
+            { hour : fromEnum $ T.hour cl_time
+            , minute : fromEnum $ T.minute cl_time
+            , second : Just $ fromEnum $ T.second cl_time
+            }
+
+{-
 clockB :: OrgDateTime -> OrgDateTime -> Int -> Int -> Block
 clockB start end hh mm =
     para
@@ -484,6 +495,7 @@ clockB start end hh mm =
         , text " "
         , clock $ t hh mm
         ] -- FIXME: create a block variation for it
+-}
 
 
 -- | active timestamp with given `Date` and no specific `Time` or repeat / delays
@@ -977,7 +989,7 @@ append_bl' block doc =
         else
             doc # snoc_bl block
 
--- | If `Block` can directly contain words (`Of`, `Drawer`, `Footnote`, `DetachedItem`, `Paragraph`, `WithKeyword`, `FixedWidth`, but neither `List` or or `Table` or `HR` or `LComment`)
+-- | If `Block` can directly contain words (`Of`, `Drawer`, `Footnote`, `DetachedItem`, `Paragraph`, `WithKeyword`, `FixedWidth`, but neither `List` or or `Table` or `HR` or `LComment` or `ClockB`)
 -- | add given words to the end of the block
 inject_words :: Array Words -> Block -> Block
 inject_words words = case _ of
@@ -994,6 +1006,7 @@ inject_words words = case _ of
     WithKeyword kw block -> WithKeyword kw $ inject_words words block
     LComment lines -> LComment lines
     FixedWidth curWords -> FixedWidth $ NEA.appendArray curWords words
+    ClockB stend clock -> ClockB stend clock
     JoinB blockA blockB -> JoinB blockA $ inject_words words blockB
 
 

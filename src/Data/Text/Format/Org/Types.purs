@@ -70,6 +70,7 @@ data Block
     | HRule
     | LComment (Array String)
     | FixedWidth (NonEmptyArray Words)
+    | ClockB { start :: OrgDateTime, end :: Maybe OrgDateTime } Clock -- FIXME: use OrgDateTimeRange
     | JoinB Block Block
 
 
@@ -711,6 +712,7 @@ type BlockRow =
     , list :: Case2 (Variant ListTypeRow) (Array JsonListItem)
     , litem :: Case3 (Variant ListTypeRow) { indent :: String } JsonListItem
     , table :: Case1 { format :: Maybe String, rows :: JsonRows }
+    , clock :: Case3 (Record JsonDateTimeRow) (Maybe (Record JsonDateTimeRow)) (Record ClockRow)
     )
 
 
@@ -770,6 +772,8 @@ readBlock =
         , litem : Variant.use3 $ \ltype { indent } itemdef ->
                         DetachedItem $ setIndent { indent } $ loadDetachedItem (fromVariant ltype) itemdef
         , table : Variant.use1 $ \{ format, rows } -> Table format $ importRows rows
+        , clock : Variant.use3 $ \start end clock ->
+                        ClockB { start : load start, end : load <$> end } $ wrap clock
         }
 
 
@@ -790,6 +794,8 @@ blockToVariant = case _ of
             { indent : fromMaybe "" mbIndent }
             $ convertDetachedItem ditem
     Table mbFormat rows -> Variant.select1 (Proxy :: _ "table") { format : mbFormat, rows : exportRows rows }
+    ClockB { start, end } clock ->
+        Variant.select3 (Proxy :: _ "clock") (convert start) (convert <$> end) $ unwrap clock
     JoinB _ _ -> Variant.select2 (Proxy :: _ "kind") Quote [ Plain "ERR" ] -- Joins are handled on top level
 
 
@@ -807,6 +813,8 @@ blockFromVariant =
         , litem : Variant.uncase3 >>> \(ltype /\ { indent } /\ def) ->
                         DetachedItem $ setIndent { indent } $ loadDetachedItem (fromVariant ltype) def
         , table : Variant.uncase1 >>> \{ format, rows } -> Table format $ importRows rows
+        , clock : Variant.uncase3 >>> \(start /\ end /\ clock) ->
+                        ClockB { start : load start, end : load <$> end } $ wrap clock
         }
 
 

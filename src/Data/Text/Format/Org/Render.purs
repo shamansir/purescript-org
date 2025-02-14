@@ -127,6 +127,12 @@ layoutBlock ro deep = case _ of
     Org.Footnote label def ->
         D.bracket "[" (D.text "fn:" <> D.text label) "]"
             <+> D.stack (layoutWords <$> NEA.toArray def) -- FIXME: impoperly renders line breaks, see 04e
+    Org.ClockB { start, end } clock ->
+        D.text "CLOCK:" <+>
+        case end of
+            Just end' -> layoutDateTime start <> D.text "--" <> layoutDateTime end'
+            Nothing -> layoutDateTime start
+        <+> D.text "=>" <+> layoutClock clock
     -- Quote
     -- const D.nil
     -- where
@@ -268,7 +274,7 @@ layoutWords = case _ of
         case end of
             Just end' -> layoutDateTime start <> D.text "--" <> layoutDateTime end'
             Nothing -> layoutDateTime start
-    Org.ClockW (Org.Clock clock) -> D.text "=>" <+> layoutClock clock
+    Org.ClockW (Org.Clock clock) -> D.text "=>" <+> layoutClock (Org.Clock clock)
     Org.DiaryW (Org.Diary diary) ->
         D.bracket "<%%"
             (D.text diary.expr <> case diary.time of
@@ -304,9 +310,6 @@ layoutWords = case _ of
         imgSrc = case _ of
             Org.RemoteSrc url -> D.text url
             Org.LocalSrc url -> D.text "file:" <> D.text url
-        layoutClock c =
-            D.text (showdd $ c.hour) <> D.text ":" <>
-            D.text (showdd $ c.minute)
         inlineKey = case _ of
             Org.IHtml -> "html"
             Org.IComment -> "comment"
@@ -354,6 +357,12 @@ layoutDateTime =
             Org.Delay d ->
                 dmode d.mode <> show d.value <> interval d.interval
             >>> D.text
+
+
+layoutClock :: Org.Clock -> Doc
+layoutClock (Org.Clock c) =
+    D.text (showdd $ c.hour) <> D.text ":" <>
+    D.text (showdd $ c.minute)
 
 
 layoutDate :: DT.Date -> Doc
