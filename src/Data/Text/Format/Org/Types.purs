@@ -63,7 +63,7 @@ data Block
     -- | Centered (NonEmptyArray Words) -- TODO
     | Footnote String (NonEmptyArray Words)
     | List ListItems
-    | DetachedItem DetachedListItem
+    | DetachedItem DetachedListItem -- used only for `EBNF` parsing
     | Table (Maybe String) (NonEmptyArray TableRow)
     | Paragraph (NonEmptyArray Words)
     | WithKeyword Keyword Block
@@ -266,6 +266,7 @@ data ListType
     | NumberedFrom Int
     | Hyphened
     | Alphed
+    | Prefixed String
 
 
 derive instance Eq ListType
@@ -283,7 +284,8 @@ data ListItems = ListItems ListType (NonEmptyArray Item)
 data DetachedListItem =
     DetachedListItem
         ListType
-        { mbIndent :: Maybe String }
+        { mbIndent :: Maybe String -- having it set overrides the natural indent / TODO: make out indent possible to override
+        }
         ListItemProps
         (NonEmptyArray Words)
 
@@ -538,7 +540,7 @@ emptyItem =
 
 
 emptyDetItem :: DetachedListItem
-emptyDetItem = detachedFromItem "" Bulleted emptyItem
+emptyDetItem = detachedFromItem Bulleted emptyItem
 
 
 type JsonListItemsRow =
@@ -611,11 +613,11 @@ itemFromDetached (DetachedListItem _ _ props words) =
     Item props words Nothing
 
 
-detachedFromItem :: String -> ListType -> Item -> DetachedListItem
-detachedFromItem indent ltype (Item props words _) =
+detachedFromItem :: ListType -> Item -> DetachedListItem
+detachedFromItem ltype (Item props words _) =
     DetachedListItem
         ltype
-        { mbIndent : if String.length indent > 0 then Just indent else Nothing }
+        { mbIndent : Nothing }
         props
         words
 
@@ -624,8 +626,17 @@ convertDetachedItem :: DetachedListItem -> JsonListItem
 convertDetachedItem = itemFromDetached >>> convertListItem
 
 
-loadDetachedItem :: String -> ListType -> JsonListItem -> DetachedListItem
-loadDetachedItem indent ltype = loadListItem >>> detachedFromItem indent ltype
+loadDetachedItem :: ListType -> JsonListItem -> DetachedListItem
+loadDetachedItem ltype = loadListItem >>> detachedFromItem ltype
+
+
+setIndent :: { indent :: String } -> DetachedListItem -> DetachedListItem
+setIndent { indent } (DetachedListItem ltype _ props words) =
+    DetachedListItem
+        ltype
+        { mbIndent : if String.length indent > 0 then Just indent else Nothing }
+        props
+        words
 
 
 type BlockKindRow =
@@ -698,7 +709,7 @@ type BlockRow =
     , fixed :: Case1 (Array Words)
     , comment :: Case1 (Array String)
     , list :: Case2 (Variant ListTypeRow) (Array JsonListItem)
-    , litem :: Case3 (Variant ListTypeRow) String JsonListItem
+    , litem :: Case3 (Variant ListTypeRow) { indent :: String } JsonListItem
     , table :: Case1 { format :: Maybe String, rows :: JsonRows }
     )
 
@@ -756,7 +767,8 @@ readBlock =
         , fixed : Variant.use1 $ FixedWidth <<< importWords
         , comment : Variant.use1 LComment
         , list : Variant.use2 $ \ltype items -> List $ ListItems (fromVariant ltype) $ importItems items
-        , litem : Variant.use3 $ \ltype ident itemdef -> DetachedItem $ loadDetachedItem ident (fromVariant ltype) itemdef
+        , litem : Variant.use3 $ \ltype { indent } itemdef ->
+                        DetachedItem $ setIndent { indent } $ loadDetachedItem (fromVariant ltype) itemdef
         , table : Variant.use1 $ \{ format, rows } -> Table format $ importRows rows
         }
 
@@ -772,7 +784,11 @@ blockToVariant = case _ of
     LComment lines -> Variant.select1 (Proxy :: _ "comment") lines
     WithKeyword _ _ -> Variant.select2 (Proxy :: _ "kind") Quote [ Plain "ERR" ] -- Keywords are handled on top level
     List (ListItems listType items) -> Variant.select2 (Proxy :: _ "list") (toVariant listType) $ exportItems items
-    DetachedItem ditem@(DetachedListItem ltype { mbIndent } _ _) -> Variant.select3 (Proxy :: _ "litem") (toVariant ltype) (fromMaybe "" mbIndent) $ convertDetachedItem ditem
+    DetachedItem ditem@(DetachedListItem ltype { mbIndent } _ _) ->
+        Variant.select3 (Proxy :: _ "litem")
+            (toVariant ltype)
+            { indent : fromMaybe "" mbIndent }
+            $ convertDetachedItem ditem
     Table mbFormat rows -> Variant.select1 (Proxy :: _ "table") { format : mbFormat, rows : exportRows rows }
     JoinB _ _ -> Variant.select2 (Proxy :: _ "kind") Quote [ Plain "ERR" ] -- Joins are handled on top level
 
@@ -788,7 +804,8 @@ blockFromVariant =
         , footnote : Variant.uncase2 >>> map importWords >>> Tuple.uncurry Footnote
         , comment : Variant.uncase1 >>> LComment
         , list : Variant.uncase2 >>> Tuple.uncurry \ltype items -> List $ ListItems (fromVariant ltype) $ importItems items
-        , litem : Variant.uncase3 >>> \(ltype /\ indent /\ def) -> DetachedItem $ loadDetachedItem indent (fromVariant ltype) def
+        , litem : Variant.uncase3 >>> \(ltype /\ { indent } /\ def) ->
+                        DetachedItem $ setIndent { indent } $ loadDetachedItem (fromVariant ltype) def
         , table : Variant.uncase1 >>> \{ format, rows } -> Table format $ importRows rows
         }
 
@@ -1176,6 +1193,7 @@ type ListTypeRow =
     , numberedFrom :: Case1 Int
     , hyphened :: Case
     , alphed :: Case
+    , prefixed :: Case1 String
     )
 
 
@@ -1189,6 +1207,7 @@ readListType =
         , numberedFrom : Variant.use1 NumberedFrom
         , hyphened : Variant.use Hyphened
         , alphed : Variant.use Alphed
+        , prefixed : Variant.use1 Prefixed
         }
 
 
@@ -1200,6 +1219,7 @@ listTypeToVariant = case _ of
     NumberedFrom n -> Variant.select1 (Proxy :: _ "numberedFrom") n
     Hyphened -> Variant.select (Proxy :: _ "hyphened")
     Alphed -> Variant.select (Proxy :: _ "alphed")
+    Prefixed s -> Variant.select1 (Proxy :: _ "prefixed") s
 
 
 listTypeFromVariant :: Variant ListTypeRow -> ListType
@@ -1211,6 +1231,7 @@ listTypeFromVariant =
         , numberedFrom : Variant.uncase1 >>> NumberedFrom
         , hyphened : Variant.uncase Hyphened
         , alphed : Variant.uncase Alphed
+        , prefixed : Variant.uncase1 >>> Prefixed
         }
 
 

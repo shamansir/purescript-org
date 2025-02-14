@@ -995,6 +995,11 @@ det_ltype ltype (DetachedListItem _ indent props ws) =
     DetachedListItem ltype indent props ws
 
 
+det_ch_ltype :: (ListType -> ListType) -> DetachedListItem -> DetachedListItem
+det_ch_ltype f (DetachedListItem ltype indent props ws) =
+    DetachedListItem (f ltype) indent props ws
+
+
 det_check :: Check -> DetachedListItem -> DetachedListItem
 det_check check (DetachedListItem ltype indent props ws) =
     DetachedListItem ltype indent (props { check = Just check }) ws

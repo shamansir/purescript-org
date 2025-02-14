@@ -142,8 +142,13 @@ extractFromRoot =
             case Debug.spy "list-rule" rule of
                 TextRule "indent" indent -> litem # Org.det_indent indent
                 TextRule "list-item-bullet" bullet -> litem # Org.det_ltype (_extractListType bullet)
-                TextRule "list-item-counter" counter -> litem -- # Org.det_counter
-                TextRule "list-item-counter-suffix" suffix -> litem -- TODO
+                TextRule "list-item-counter" counter -> litem # Org.det_ltype (Org.Prefixed counter) -- litem # Org.det_counter (Org.Counter $ fromMaybe 0 $ Int.fromString counter)
+                TextRule "list-item-counter-suffix" suffix ->
+                    litem # Org.det_ch_ltype
+                        (case _ of
+                            Org.Prefixed str -> Org.Prefixed $ str <> suffix
+                            ltype -> ltype
+                        )
                 TextRule "list-item-tag" tag -> litem # Org.det_tag tag
                 Rule "list-item-checkbox" [ TextRule "list-item-checkbox-state" cbState ] -> litem # Org.det_check (_extractCheckboxType cbState)
                 Rule "text" textRules -> litem # Org.det_add_text (wordsFromRules textRules)

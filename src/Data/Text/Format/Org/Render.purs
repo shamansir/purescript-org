@@ -3,11 +3,13 @@ module Data.Text.Format.Org.Render where
 import Prelude
 
 import Data.Array as Array
+import Data.Array.NonEmpty (NonEmptyArray)
 import Data.Array.NonEmpty as NEA
 import Data.Char (fromCharCode)
 import Data.Date (Date, day, month, weekday, year)  as DT
 import Data.Enum (fromEnum)
 import Data.Maybe (Maybe(..), maybe, fromMaybe, isJust)
+import Data.Either (Either(..))
 import Data.Newtype (unwrap)
 import Data.String (toUpper, toLower, take, length) as String
 import Data.String.CodeUnits (singleton) as String
@@ -89,7 +91,8 @@ layoutBlock ro deep = case _ of
         layoutItems ro (Items deep) deep items
     Org.DetachedItem ditem@(Org.DetachedListItem ltype { mbIndent } _ _) ->
         let
-            deep' = case deep of Deep n -> Deep $ n + maybe 0 String.length mbIndent
+            -- deep' = case deep of Deep n -> Deep $ n + maybe 0 String.length mbIndent
+            deep' = Deep $ maybe 0 String.length mbIndent
         in
             layoutItems ro (Items deep') deep'
                 $ Org.ListItems ltype
@@ -378,7 +381,11 @@ layoutRange = case _ of
 
 
 layoutItems :: RO -> IndentSubject -> Deep -> Org.ListItems -> Doc
-layoutItems ro parentSubj deep (Org.ListItems lt items) =
+layoutItems ro parentSubj deep (Org.ListItems lt items) = layoutItemsWith ro parentSubj deep lt items
+
+
+layoutItemsWith :: RO -> IndentSubject -> Deep -> Org.ListType -> NonEmptyArray Org.Item -> Doc
+layoutItemsWith ro parentSubj deep lt items  =
     let
         markerPrefix idx = case lt of
             Org.Bulleted -> "*"
@@ -387,6 +394,7 @@ layoutItems ro parentSubj deep (Org.ListItems lt items) =
             Org.Numbered -> show (idx + 1) <> "."
             Org.NumberedFrom n -> show (idx + n) <> "."
             Org.Alphed -> (fromMaybe "?" $ String.singleton <$> (fromCharCode $ 0x61 + idx)) <> "."
+            Org.Prefixed str -> str
             # D.text
         checkPrefix = case _ of
             Org.Uncheck -> "[ ]"
@@ -522,6 +530,7 @@ _indentByLt idx =
         Org.Numbered -> if (idx + 1) < 10 then 3 else 4
         Org.NumberedFrom n -> if (idx + n) < 10 then 3 else 4
         Org.Alphed -> 3
+        Org.Prefixed str -> String.length str -- TODO: check
 
 
 alwaysZeroRO :: RO
