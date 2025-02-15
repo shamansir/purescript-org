@@ -50,9 +50,16 @@ toRule =
                         Text rName -> Just $ Rule rName $ Array.catMaybes $ toRule <$> tail
                         _ -> Nothing
 
+
+data Subject
+    = B Org.Block
+    | D Org.Drawer
+    | P Org.Properties
+
+
 data ContentTarget
     = TopLevel
-    | GoesTo { hasLines :: Boolean } (Either Org.Drawer Org.Block)
+    | GoesTo { hasLines :: Boolean } Subject
     -- List ?
 
 
@@ -100,16 +107,18 @@ extractFromRoot =
                 , target :
                     case target of
                         TopLevel -> target
-                        GoesTo { hasLines } blockOrDrawer ->
+                        GoesTo { hasLines } subject ->
                             let
                                 wordsToAdd = wordsFromRules $ _extractWordsRules contentRules
                                 wordsToAdd' = if hasLines then Org.br : wordsToAdd else wordsToAdd -- a kind of hack to add breaks to the contents of the blocks
                             in
-                            case blockOrDrawer of
-                                Right block ->
-                                    GoesTo { hasLines : true } $ Right $ Org.inject_words (Debug.spy "block-words-to-inject" wordsToAdd') block
-                                Left drawer ->
-                                    GoesTo { hasLines : true } $ Left  $ Org.drawer_add (Debug.spy "drawer-words-to-inject" wordsToAdd') drawer
+                            case subject of
+                                B block ->
+                                    GoesTo { hasLines : true } $ B $ Org.inject_words (Debug.spy "block-words-to-inject" wordsToAdd') block
+                                D drawer ->
+                                    GoesTo { hasLines : true } $ D $ Org.drawer_add (Debug.spy "drawer-words-to-inject" wordsToAdd') drawer
+                                P props ->
+                                    target -- FIXME: TODO
                 }
             Rule "empty-line" [] ->
                 { orgf : orgf # Org.append_bl Org.blank
@@ -122,22 +131,22 @@ extractFromRoot =
             Rule "block-begin-line" [ TextRule "block-name" name ] ->
                 { orgf
                 , target : case name of
-                    "src"     -> GoesTo { hasLines : false } $ Right $ Org.code' [] -- orgf # Org.append_bl
-                    "quote"   -> GoesTo { hasLines : false } $ Right $ Org.quote [] -- orgf # Org.append_bl
-                    "example" -> GoesTo { hasLines : false } $ Right $ Org.example [] -- orgf # Org.append_bl
-                    "comment" -> GoesTo { hasLines : false } $ Right $ Org.bcomment [] -- orgf # Org.append_bl
+                    "src"     -> GoesTo { hasLines : false } $ B $ Org.code' [] -- orgf # Org.append_bl
+                    "quote"   -> GoesTo { hasLines : false } $ B $ Org.quote [] -- orgf # Org.append_bl
+                    "example" -> GoesTo { hasLines : false } $ B $ Org.example [] -- orgf # Org.append_bl
+                    "comment" -> GoesTo { hasLines : false } $ B $ Org.bcomment [] -- orgf # Org.append_bl
                     _ -> TopLevel
                 }
             Rule "block-begin-line" [ TextRule "block-name" name, TextRule "block-parameters" params ] ->
                 { orgf
                 , target : case name of
-                    "src" -> GoesTo { hasLines : false } $ Right $ Org.codeIn' params [] -- # Org.wdoc (Org.snoc_bl $ Org.codeIn' params []) orgf
+                    "src" -> GoesTo { hasLines : false } $ B $ Org.codeIn' params [] -- # Org.wdoc (Org.snoc_bl $ Org.codeIn' params []) orgf
                     _ -> target
                 }
             Rule "block-end-line" [ TextRule "block-name" name ] ->
                 { orgf :
                     case target of
-                        GoesTo _ (Right block) -> orgf # Org.append_bl block
+                        GoesTo _ (B block) -> orgf # Org.append_bl block
                         _ -> orgf -- should not happen
                 , target : TopLevel
                 }
@@ -162,24 +171,12 @@ extractFromRoot =
                      -- although rule is named `drawer-begin-line`, drawer end comes from parser this way
                     isDrawerEnd = String.toLower drawerName == "end"
                 in
-                { orgf :
-                    if isDrawerEnd then
-                        case target of
-                            GoesTo _ (Left drawer) ->
-                                let
-                                    addDrawer :: Org.Section -> Org.Section
-                                    addDrawer sec =
-                                        case Org.last_bl_of $ Org.docs sec of
-                                            Just (Org.DetachedItem dlitem) -> -- TODO: mark that the last item was a list item using `State`
-                                                sec # Org.sec_wdoc (Org.wlast_bl_rec $ const $ Org.DetachedItem $ Org.det_add_drawer drawer dlitem)
-                                            Just someBlock ->
-                                                sec # Org.append_bl_sec (Org.IsDrawer drawer)
-                                            Nothing -> sec # Org.sec_append_drawer drawer
-                                in
-                                    orgf # Org.wdoc (Org.wlast_sec addDrawer)
-                            _ -> orgf -- should not happen
-                    else orgf
-                , target : if not isDrawerEnd then GoesTo { hasLines : false } $ Left $ Org.mk_drawer drawerName [] else TopLevel
+                { orgf : if isDrawerEnd then _finishDrawer orgf target else orgf
+                , target : if not isDrawerEnd then GoesTo { hasLines : false } $ D $ Org.mk_drawer drawerName [] else TopLevel
+                }
+            Rule "drawer-end-line" [] ->
+                { orgf : _finishDrawer orgf target
+                , target : TopLevel
                 }
             Rule "clock" [ Rule "timestamp-inactive-range" [ startTsRule, endTsRule ], Rule "clock-duration" [ TextRule "clock-dur-hh" hhDurValue, TextRule "clock-dur-mm" mmDurValue ] ] ->
                 { orgf : orgf # Org.append_bl
@@ -202,6 +199,22 @@ extractFromRoot =
                 , target
                 }
             _ -> { orgf, target }
+
+        _finishDrawer orgf target =
+            case target of
+                GoesTo _ (D drawer) ->
+                    let
+                        addDrawer :: Org.Section -> Org.Section
+                        addDrawer sec =
+                            case Org.last_bl_of $ Org.docs sec of
+                                Just (Org.DetachedItem dlitem) -> -- TODO: mark that the last item was a list item using `State`
+                                    sec # Org.sec_wdoc (Org.wlast_bl_rec $ const $ Org.DetachedItem $ Org.det_add_drawer drawer dlitem)
+                                Just someBlock ->
+                                    sec # Org.append_bl_sec (Org.IsDrawer drawer)
+                                Nothing -> sec # Org.sec_append_drawer drawer
+                    in
+                        orgf # Org.wdoc (Org.wlast_sec addDrawer)
+                _ -> orgf -- should not happen
 
         _extractWordsRules contentRules =
             case Debug.spy "content-rules" contentRules of

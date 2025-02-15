@@ -26,14 +26,15 @@ import Data.FunctorWithIndex (mapWithIndex)
 import Data.Text.Format.Org.Types
 import Data.Text.Format.Org.Path (Path)
 import Data.Text.Format.Org.Path as P
-import Data.Text.Format.Org.Keywords as Keywords
+import Data.Text.Format.Org.Property (OrgProperty)
+import Data.Text.Format.Org.Property as Prop
+import Data.Text.Format.Org.Keyword (OrgKeyword)
+import Data.Text.Format.Org.Keyword as KW --as Keywords
 
 
-type Property = Keywords.Keyword String
 
-
-prop :: String -> String -> Property
-prop = Keywords.kw
+prop :: String -> String -> OrgProperty String
+prop = Prop.prop
 
 
 -- | Create empty `OrgFile`
@@ -48,13 +49,13 @@ emptyDoc =
 
 -- | Create `OrgFile` with empty `meta` and given `OrgDoc` as its root
 f :: OrgDoc -> OrgFile
-f = f_ []
+f = f_ [] []
 
 
--- | Create `OrgFile` with given `meta` keywords and given `OrgDoc` as its root
-f_ :: Array Property -> OrgDoc -> OrgFile
-f_ props doc =
-    OrgFile { meta : Keywords.make props, doc }
+-- | Create `OrgFile` with given `meta` keywords and properties and given `OrgDoc` as its root
+f_ :: Array (OrgKeyword String) -> Array (OrgProperty String) -> OrgDoc -> OrgFile
+f_ keywords props doc =
+    OrgFile { meta : KW.make keywords, props : Prop.make props, doc }
 
 
 -- | create `OrgDoc` from given `Section`s without any preceding blocks
@@ -114,20 +115,38 @@ blocksn = blocks >>> Array.length
 
 
 -- | Add meta keyword to the `OrgFile` as the last one
-meta :: String -> String -> OrgFile -> OrgFile
-meta prop val (OrgFile { meta, doc }) =
+meta_kw :: OrgKeyword String -> OrgFile -> OrgFile
+meta_kw kw (OrgFile { meta, props, doc }) =
     OrgFile
-        { meta : Keywords.qpush meta prop val
-        , doc : doc
+        { meta : KW.snoc meta kw
+        , props, doc
         }
 
 
 -- | Add meta keyword to the `OrgFile` as the first one
-meta_ :: String -> String -> OrgFile -> OrgFile
-meta_ prop val (OrgFile { meta, doc }) =
+meta_kw_ :: OrgKeyword String -> OrgFile -> OrgFile
+meta_kw_ kw (OrgFile { meta, props, doc }) =
     OrgFile
-        { meta : meta # Keywords.qpile prop val
-        , doc : doc
+        { meta : KW.cons kw meta
+        , props, doc
+        }
+
+
+-- | Add property to the `OrgFile` properties drawer as the last one
+meta_prop :: OrgProperty String -> OrgFile -> OrgFile
+meta_prop prop (OrgFile { meta, props, doc }) =
+    OrgFile
+        { props : Prop.snoc props prop
+        , meta, doc
+        }
+
+
+-- | Add property to the `OrgFile` properties drawer as the first one
+meta_prop_ :: OrgProperty String -> OrgFile -> OrgFile
+meta_prop_ prop (OrgFile { meta, props, doc }) =
+    OrgFile
+        { props : props # Prop.cons prop
+        , meta, doc
         }
 
 
@@ -137,7 +156,7 @@ data FinishStep = Finish String
 
 todoSequence :: Array ProgressStep -> Array FinishStep -> OrgFile -> OrgFile
 todoSequence pss fss =
-    meta "SEQ_TODO" $ String.joinWith " " (pssToString <$> pss) <> " | " <> String.joinWith " " (fssToString <$> fss)
+    meta_kw_ $ KW.kw "SEQ_TODO" $ String.joinWith " " (pssToString <$> pss) <> " | " <> String.joinWith " " (fssToString <$> fss)
     where
      pssToString (Progress str) = String.toUpper str
      fssToString (Finish str) = String.toUpper str
@@ -596,7 +615,7 @@ sec level heading doc =
                 , scheduled : Nothing
                 , timestamp : Nothing
                 }
-        , props : Keywords.empty
+        , props : Prop.empty
         , drawers : []
         , comment : false
         , doc
@@ -705,12 +724,8 @@ timestamp :: OrgDateTime -> Section -> Section
 timestamp dt = __qplan $ _ { timestamp = Just dt }
 
 
-wprop :: String -> String -> Section -> Section
-wprop prop value = __qset $ \sec -> sec { props = Keywords.qpush sec.props prop value }
-
-
-wprop_ :: String -> Section -> Section
-wprop_ prop = __qset $ \sec -> sec { props = Keywords.qpushon sec.props prop }
+wprop :: OrgProperty String -> Section -> Section
+wprop prop = __qset $ \sec -> sec { props = Prop.snoc sec.props prop }
 
 
 drawer :: String -> Array Words -> Section -> Section
@@ -831,19 +846,19 @@ fw :: Array Words -> Block
 fw = FixedWidth <<< __neafws
 
 
-kw :: String -> String -> Keyword
-kw = Keywords.kw
+kw :: String -> String -> OrgKeyword String
+kw = KW.kw
 
 
-kwopt :: String -> String -> String -> Keyword
-kwopt = Keywords.kwoptv
+kwopt :: String -> String -> String -> OrgKeyword String
+kwopt = KW.kwoptv
 
 
 with_kw :: String -> String -> Block -> Block
 with_kw name value = WithKeyword $ kw name value
 
 
-with_kws :: Array Keyword -> Block -> Block
+with_kws :: Array (OrgKeyword String) -> Block -> Block
 with_kws kws block = Array.foldr WithKeyword block kws
 
 
@@ -926,7 +941,7 @@ addBlock' = addBlock P.root
 
 -- | update `OrgDoc` inside the `OrgFile` with given function (there's only one root `OrgDoc` inside the file)
 wdoc :: (OrgDoc -> OrgDoc) -> OrgFile -> OrgFile
-wdoc f (OrgFile { meta, doc }) = OrgFile { meta, doc : f doc }
+wdoc f (OrgFile { meta, props, doc }) = OrgFile { meta, props, doc : f doc }
 
 
 -- | add `Section` in front of other child sections in this `OrgDoc`

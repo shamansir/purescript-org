@@ -37,15 +37,18 @@ import Yoga.Json.Extra
     , uncase, uncase1, uncase2, uncase3, uncase4
     ) as Variant
 
-import Data.Text.Format.Org.Keywords (Keywords, JsonKeywords, fromKeywords, toKeywords)
-import Data.Text.Format.Org.Keywords (Keyword, empty, toRec, fromRec) as Keywords
+import Data.Text.Format.Org.Keyword (OrgKeywords, OrgKeyword, JsonKeywords(..), JsonKeywordRow, JsonKeywordOrPropRec)
+import Data.Text.Format.Org.Keyword (empty, toRec, fromRec, fromJson, toJson) as KW
+import Data.Text.Format.Org.Property (OrgProperties, OrgProperty, JsonProperties, JsonPropertyRow)
+import Data.Text.Format.Org.Property (empty, toRec, fromRec, fromJson, toJson) as Prop
 
 -- inspired by https://hackage.haskell.org/package/org-mode-2.1.0/docs/Data-Org.html
 
 
 data OrgFile =
     OrgFile
-        { meta :: Keywords String
+        { meta  :: OrgKeywords String
+        , props :: OrgProperties String -- could be part of the top section?
         , doc :: OrgDoc
         }
 
@@ -66,7 +69,7 @@ data Block
     | DetachedItem DetachedListItem -- used only for `EBNF` parsing
     | Table (Maybe String) (NonEmptyArray TableRow)
     | Paragraph (NonEmptyArray Words)
-    | WithKeyword Keyword Block
+    | WithKeyword (OrgKeyword String) Block
     | HRule
     | LComment (Array String)
     | FixedWidth (NonEmptyArray Words)
@@ -158,9 +161,6 @@ newtype Repeater =
         }
 
 
-type Keyword = Keywords.Keyword String
-
-
 data RepeaterMode
     = Single
     | FromToday
@@ -209,7 +209,7 @@ newtype Section =
         , level :: Int
         , tags :: Array String
         , planning :: Planning
-        , props :: Keywords String
+        , props :: OrgProperties String
         , drawers :: Array Drawer
         , comment :: Boolean
         , doc :: OrgDoc
@@ -374,7 +374,7 @@ class JsonOverVariant row a <= JsonOverVariantH (row :: Row Type) a | a -> row w
     writeImplVar :: a -> Foreign
 
 
-class Newtype a x <= JsonOverNewtype a x | a -> x, x -> a where
+class Newtype a x <= JsonOverNewtype a x | a -> x, x -> a where -- FIXME: not used?
     readImplNT :: Foreign -> F a
     writeImplNT :: a -> Foreign
 
@@ -1632,7 +1632,7 @@ type SectionRow =
     , heading :: Array Words
     , level :: Int
     , planning :: Record PlanningRow
-    , props :: JsonKeywords String
+    , props :: JsonProperties String
     , comment :: Boolean
     , drawers :: Array Drawer
     , doc :: Record DocRow
@@ -1641,7 +1641,8 @@ type SectionRow =
 
 
 type FileRow =
-    ( meta :: JsonKeywords String
+    ( meta  :: JsonKeywords String
+    , props :: JsonProperties String
     , doc :: Record DocRow
     , sections ::
         Array
@@ -1691,7 +1692,7 @@ emptySection =
         , level : -1
         , tags : []
         , planning : emptyPlanning
-        , props : Keywords.empty
+        , props : Prop.empty
         , drawers : []
         , comment : false
         , doc : emptyDoc
@@ -1710,7 +1711,7 @@ convertSection sectionId (Section section) =
         , heading : exportWords section.heading
         , level : section.level
         , planning : convert section.planning
-        , props : fromKeywords section.props
+        , props : Prop.toJson section.props
         , drawers : section.drawers
         , tags : section.tags
         , comment : section.comment
@@ -1731,7 +1732,7 @@ loadSection allSections section =
         , tags : section.tags
         , planning : load section.planning
         , drawers : section.drawers
-        , props : toKeywords section.props
+        , props : Prop.fromJson section.props
         , comment : section.comment
         , doc : loadDoc allSections section.doc
         }
@@ -1769,12 +1770,16 @@ convertDoc parentId (OrgDoc doc) =
     let
         (sectionsIds /\ sectionsMap) = collectSections parentId doc.sections
         collectKeywords = collectKeywords' []
+        collectKeywords'
+            :: Array (JsonKeywordOrPropRec String)
+            -> Block
+            -> { keywords :: JsonKeywords String, block :: Variant BlockRow }
         collectKeywords' prev =
             case _ of
                 WithKeyword keyword block ->
-                    collectKeywords' (Array.snoc prev $ Keywords.toRec keyword) block
+                    collectKeywords' (Array.snoc prev $ KW.toRec keyword) block
                 block ->
-                    { keywords : prev, block : toVariant block }
+                    { keywords : JsonKeywords prev, block : toVariant block }
     in
     (
         { blocks : collectKeywords <$> flattenBlocks doc.zeroth
@@ -1796,10 +1801,13 @@ loadDoc allSections doc =
         , sections : loadOrEmpty <$> doc.sections
         }
     where
+        blockWithKeywords
+            :: { keywords :: JsonKeywords String, block :: Variant BlockRow }
+            -> Block
         blockWithKeywords { keywords, block } =
-            case Array.uncons keywords of
+            case Array.uncons $ unwrap keywords of
                 Just { head, tail } ->
-                    WithKeyword (Keywords.fromRec head) $ blockWithKeywords { keywords : tail, block }
+                    WithKeyword (KW.fromRec head) $ blockWithKeywords { keywords : wrap tail, block }
                 Nothing ->
                     fromVariant block
         loadOrEmpty sectionId =
@@ -1814,10 +1822,11 @@ loadDoc allSections doc =
 
 
 convertFile :: OrgFile -> Record FileRow
-convertFile (OrgFile { meta, doc }) =
+convertFile (OrgFile { meta, props, doc }) =
     let convertedDoc /\ sectionsMap = convertDoc (SectionId [ 0 ]) doc
     in
-    { meta : fromKeywords meta
+    { meta  : KW.toJson meta
+    , props : Prop.toJson props
     , doc : convertedDoc
     , sections : sectionsToArray sectionsMap
     }
@@ -1826,7 +1835,8 @@ convertFile (OrgFile { meta, doc }) =
 loadFile :: Record FileRow -> OrgFile
 loadFile file =
     OrgFile
-        { meta : toKeywords file.meta
+        { meta  : KW.fromJson file.meta
+        , props : Prop.fromJson file.props
         , doc : loadDoc (sectionsFromArray file.sections) file.doc
         }
 
@@ -1842,6 +1852,11 @@ loadFile file =
 instance JsonOverRow FileRow OrgFile where
     convert = convertFile
     load = loadFile
+
+
+instance JsonOverRow (JsonPropertyRow String) (OrgProperty String) where
+    convert = Prop.toRec
+    load = Prop.fromRec
 
 
 -- instance Newtype (Array Int) JsonSectionId

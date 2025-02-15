@@ -1,0 +1,36 @@
+* CD collection
+** Classic
+*** Goldberg Variations
+    :PROPERTIES:
+    :Title:     Goldberg Variations
+    :Composer:  J.S. Bach
+    :Artist:    Glenn Gould
+    :Publisher: Deutsche Grammophon
+    :NDisks:    1
+    :END:
+
+* CD collection
+  :PROPERTIES:
+  :NDisks_ALL:  1 2 3 4
+  :Publisher_ALL: "Deutsche Grammophon" Philips EMI
+  :END:
+
+* CD collection
+** Classic
+    :PROPERTIES:
+    :Genres: Classic
+    :END:
+*** Goldberg Variations
+    :PROPERTIES:
+    :Title:     Goldberg Variations
+    :Composer:  J.S. Bach
+    :Artist:    Glenn Gould
+    :Publisher: Deutsche Grammophon
+    :NDisks:    1
+    :Genres+:   Baroque
+    :END:
+
+* Extending Properties
+    #+PROPERTY: NDisks_ALL 1 2 3 4
+    #+PROPERTY: var  foo=1
+    #+PROPERTY: var+ bar=2
