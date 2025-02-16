@@ -5,6 +5,7 @@ import Prelude (($), (#))
 
 import Data.Text.Format.Org.Types (OrgFile, ListType(..))
 import Data.Text.Format.Org.Construct as Org
+import Data.Text.Format.Org.Property as P
 
 
 test :: OrgFile
@@ -22,10 +23,10 @@ test =
                             ]
                         ]
                     )
-                # Org.wprop "NAME" "VALUE"
-                # Org.wprop_ "NAME"
-                # Org.wprop "NAME+" "VALUE"
-                # Org.wprop_ "NAME+"
+                # Org.wprop (P.prop "NAME" "VALUE")
+                # Org.wprop (P.propn "NAME")
+                # Org.wprop (P.propapp "NAME" "VALUE")
+                # Org.wprop (P.propappn "NAME")
                 # Org.drawer1 "drawer" (Org.text "Text.")
             , Org.sec 1
                     [ Org.text "Heading title is a part of the headline element itself <BEGIN>"
@@ -57,5 +58,5 @@ test =
                             $ Org.para1 $ Org.img_ $ Org.iloc "some/image.png"
                         ]
                     )
-                # Org.wprop "CUSTOM_ID" "someid"
+                # Org.wprop (P.prop "CUSTOM_ID" "someid")
             ]

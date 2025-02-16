@@ -6,6 +6,7 @@ import Prelude (($), (#))
 import Data.Text.Format.Org.Types (OrgFile)
 import Data.Text.Format.Org.Types (ListType(..))
 import Data.Text.Format.Org.Construct as Org
+import Data.Text.Format.Org.Property as Org
 
 
 test :: OrgFile
@@ -13,10 +14,10 @@ test =
     Org.f
         $ Org.ds
             [ Org.sec1 1 (Org.text "Node Properties") Org.emptyDoc
-                # Org.wprop "NAME" "VALUE"
-                # Org.wprop_ "NAME"
-                # Org.wprop "NAME+" "VALUE"
-                # Org.wprop_ "NAME+"
+                # Org.wprop (Org.prop "NAME" "VALUE")
+                # Org.wprop (Org.propn "NAME")
+                # Org.wprop (Org.propapp "NAME" "VALUE")
+                -- # Org.wprop (Org.propapp "NAME") FIXME
             , Org.sec1 1 (Org.text "Heading")
                     (Org.db
                         [ Org.with_kws
@@ -33,5 +34,5 @@ test =
                             $ Org.para1 $ Org.img_ $ Org.iloc "some/image.png"
                         ]
                     )
-                # Org.wprop "CUSTOM_ID" "someid"
+                # Org.wprop (Org.prop "CUSTOM_ID" "someid")
             ]

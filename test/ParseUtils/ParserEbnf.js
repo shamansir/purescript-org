@@ -3,7 +3,7 @@ import fs from 'node:fs';
 
 
 // const testDir = './test/examples/org-test/';
-// const orgSource = '06a-properties-and-drawers';
+// const orgSource = '04l-formatting-properties-and-keywords-ext';
 
 const testDir = './test/examples/';
 const orgSource = 'test';

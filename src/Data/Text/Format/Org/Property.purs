@@ -20,7 +20,7 @@ data OrgProperty v
     = PNameValue String v
     | POnlyName String
     | PNameOptionalValue String v (Maybe v)
-    | PAppend String v
+    | PAppend String (Maybe v)
     | PValueList String (Array v)
 
 derive instance Functor OrgProperty
@@ -78,11 +78,23 @@ propoptv name def = PNameOptionalValue name def <<< Just
 
 
 propapp :: forall v. String -> v -> OrgProperty v
-propapp = PAppend
+propapp name = PAppend name <<< Just
+
+
+propappn :: forall v. String -> OrgProperty v -- FIXME: it's from example at https://orgmode.org/worg/dev/org-syntax-edited.html#Node_Properties, but it has no sense, appending nothing
+propappn name = PAppend name Nothing
 
 
 empty :: forall v. OrgProperties v
 empty = wrap []
+
+
+hasProperties :: forall v. OrgProperties v -> Boolean
+hasProperties kws = Array.length (unwrap kws) > 0
+
+
+isEmpty :: forall v. OrgProperties v -> Boolean
+isEmpty = not hasProperties
 
 
 snoc :: forall v. OrgProperties v -> OrgProperty v -> OrgProperties v
@@ -95,11 +107,11 @@ cons prop = unwrap >>> Array.cons prop >>> wrap
 
 toRec :: forall v. OrgProperty v -> JsonPropertyRec v
 toRec = case _ of
-    PNameValue name value             -> { name, value : Just value,  default : Nothing,  append : false, vlist : []     }
-    POnlyName name                    -> { name, value : Nothing,     default : Nothing,  append : false, vlist : []     }
-    PNameOptionalValue name opt mbVal -> { name, value : mbVal,       default : Just opt, append : false, vlist : []     }
-    PAppend name append               -> { name, value : Just append, default : Nothing,  append : true,  vlist : []     }
-    PValueList name values            -> { name, value : Nothing,     default : Nothing,  append : false, vlist : values }
+    PNameValue name value             -> { name, value : Just value, default : Nothing,  append : false, vlist : []     }
+    POnlyName name                    -> { name, value : Nothing,    default : Nothing,  append : false, vlist : []     }
+    PNameOptionalValue name opt mbVal -> { name, value : mbVal,      default : Just opt, append : false, vlist : []     }
+    PAppend name mbAppend             -> { name, value : mbAppend,   default : Nothing,  append : true,  vlist : []     }
+    PValueList name values            -> { name, value : Nothing,    default : Nothing,  append : false, vlist : values }
 
 
 fromRec :: forall v. JsonPropertyRec v -> OrgProperty v
@@ -108,9 +120,7 @@ fromRec rec =
         PValueList rec.name rec.vlist
     else
         if rec.append then
-            case rec.value of
-                Just val -> PAppend rec.name val
-                Nothing  -> POnlyName rec.name -- shouldn't happen
+            PAppend rec.name rec.value
         else
             case rec.default of
                 Just def ->

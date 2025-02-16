@@ -9,7 +9,7 @@ import Data.Char (fromCharCode)
 import Data.Date (Date, day, month, weekday, year)  as DT
 import Data.Enum (fromEnum)
 import Data.Maybe (Maybe(..), maybe, fromMaybe, isJust)
-import Data.Either (Either(..))
+import Data.Either (Either(..), either)
 import Data.Newtype (unwrap)
 import Data.String (toUpper, toLower, take, length) as String
 import Data.String.CodeUnits (singleton) as String
@@ -22,17 +22,13 @@ import Data.Text.Doc as D
 import Data.Text.Format.Org.Construct (isDocEmpty) as Org
 import Data.Text.Format.Org.Types (OrgFile(..), OrgDoc(..))
 import Data.Text.Format.Org.Types as Org
-import Data.Text.Format.Org.Keywords as Keywords
+import Data.Text.Format.Org.Keyword as KW
+import Data.Text.Format.Org.Property as Prop
 
 import Data.Text.Output (class ToDoc)
 
 
 newtype Deep = Deep Int
-
-
-data KwMode
-    = AsProperty
-    | AsKeyword
 
 
 data DrawerMode
@@ -50,15 +46,15 @@ layout = layoutWith defaultRO
 
 layoutWith :: RO -> OrgFile -> Doc
 layoutWith ro (OrgFile { meta, doc }) =
-    case (Keywords.isEmpty meta /\ Org.isDocEmpty doc) of
+    case (KW.isEmpty meta /\ Org.isDocEmpty doc) of
         (true /\ true) -> D.nil
-        (false /\ true) -> renderMetaBlock
+        (false /\ true) -> renderKWMetaBlock
         (true /\ false) -> layoutDoc ro root doc
         (false /\ false) ->
-            renderMetaBlock
+            renderKWMetaBlock
             <//> layoutDoc ro root doc
     where
-        renderMetaBlock = meta # Keywords.fromKeywords # map (layoutKeyword AsKeyword) # D.stack
+        renderKWMetaBlock = meta # KW.toJson # unwrap # map (either layoutProperty layoutKeyword) # D.stack
 
 
 layoutDoc :: RO -> Deep -> OrgDoc -> Doc
@@ -117,8 +113,8 @@ layoutBlock ro deep = case _ of
             # map Org.Plain
             # _splitByBreak' (\ws -> D.text "# " <> layoutWords ws)
             # D.nest' indent
-    Org.WithKeyword (Keywords.Keyword kwd) block ->
-        D.nest indent (layoutKeyword AsKeyword kwd)
+    Org.WithKeyword kwd block ->
+        D.nest indent (either layoutProperty layoutKeyword $ KW.toRec kwd)
         </> layoutBlock ro deep block
     Org.JoinB blockA blockB ->
         layoutBlock ro deep blockA </> layoutBlock ro deep blockB
@@ -213,11 +209,12 @@ layoutSection ro (Org.Section section) =
             || isJust planning.timestamp
             || isJust planning.closed
         hasProperties =
-            Keywords.hasKeywords section.props
+            Prop.hasProperties section.props
         propertiesDrawer =
             section.props
-                # Keywords.fromKeywords'
-                # map (layoutKeyword AsProperty)
+                # Prop.toJson
+                # unwrap
+                # map layoutProperty
                 # layoutDrawer' ro (Section deep) deep DrawerUpper "properties"
         hasOtherDrawers =
             Array.length section.drawers > 0
@@ -454,14 +451,17 @@ layoutItemsWith ro parentSubj deep lt items  =
         -- D.nest' indent $ NEA.toArray $ NEA.mapWithIndex itemMaybeWithDrawers items
 
 
-layoutKeyword :: KwMode -> Keywords.KeywordRec String -> Doc
-layoutKeyword AsProperty kwd =
-    case kwd.value of
+layoutProperty :: Prop.JsonPropertyRec String -> Doc
+layoutProperty prop =
+    case prop.value of
         Just value ->
-            D.wrap ":" (D.text kwd.name) <+> D.text value
+            D.wrap ":" (D.text prop.name) <+> D.text value
         Nothing ->
-            D.wrap ":" (D.text kwd.name)
-layoutKeyword AsKeyword kwd =
+            D.wrap ":" (D.text prop.name)
+
+
+layoutKeyword :: KW.JsonKeywordRec String -> Doc
+layoutKeyword kwd =
     case kwd.default /\ kwd.value of
             Just optVal /\ Nothing -> D.bracket "#+" (D.text kwd.name <> D.bracket "[" (D.text optVal) "]") ":"
             Just optVal /\ Just value -> D.bracket "#+" (D.text kwd.name <> D.bracket "[" (D.text optVal) "]") ":" <+> D.text value

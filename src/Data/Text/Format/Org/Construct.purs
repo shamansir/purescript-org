@@ -33,10 +33,6 @@ import Data.Text.Format.Org.Keyword as KW --as Keywords
 
 
 
-prop :: String -> String -> OrgProperty String
-prop = Prop.prop
-
-
 -- | Create empty `OrgFile`
 empty :: OrgFile
 empty = f emptyDoc

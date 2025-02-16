@@ -13,6 +13,8 @@ import Data.Int (fromString) as Int
 import Data.Text.Format.Org.Types (OrgFile)
 import Data.Text.Format.Org.Types as Org
 import Data.Text.Format.Org.Construct as Org
+import Data.Text.Format.Org.Keyword as KW
+import Data.Text.Format.Org.Property as Prop
 import Data.Foldable (foldl)
 import Data.Array ((:))
 import Data.Array (head, catMaybes, uncons, singleton) as Array
@@ -54,7 +56,7 @@ toRule =
 data Subject
     = B Org.Block
     | D Org.Drawer
-    | P Org.Properties
+    | P (Prop.OrgProperties String)
 
 
 data ContentTarget
@@ -87,7 +89,7 @@ extractFromRoot =
 
         applySub { orgf,target } rule = case Debug.spy "rule" rule of
             Rule "other-keyword-line" [ TextRule "kw-name" kwTitle, TextRule "kw-value" kwValue ] ->
-                { orgf : orgf # Org.meta kwTitle kwValue
+                { orgf : orgf # Org.meta_kw (Org.kw kwTitle kwValue)
                 , target
                 }
             Rule "headline" hlRules ->
@@ -131,10 +133,10 @@ extractFromRoot =
             Rule "block-begin-line" [ TextRule "block-name" name ] ->
                 { orgf
                 , target : case name of
-                    "src"     -> GoesTo { hasLines : false } $ B $ Org.code' [] -- orgf # Org.append_bl
-                    "quote"   -> GoesTo { hasLines : false } $ B $ Org.quote [] -- orgf # Org.append_bl
-                    "example" -> GoesTo { hasLines : false } $ B $ Org.example [] -- orgf # Org.append_bl
-                    "comment" -> GoesTo { hasLines : false } $ B $ Org.bcomment [] -- orgf # Org.append_bl
+                    "src"     -> GoesTo { hasLines : false } $ B $ Org.code' []
+                    "quote"   -> GoesTo { hasLines : false } $ B $ Org.quote []
+                    "example" -> GoesTo { hasLines : false } $ B $ Org.example []
+                    "comment" -> GoesTo { hasLines : false } $ B $ Org.bcomment []
                     _ -> TopLevel
                 }
             Rule "block-begin-line" [ TextRule "block-name" name, TextRule "block-parameters" params ] ->
