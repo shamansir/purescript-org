@@ -55,7 +55,7 @@ toRule =
 
 
 data Subject
-    = B Org.Block
+    = B { nested :: Boolean } Org.Block
     | D Org.Drawer
     | P (Prop.OrgProperties String)
     | K (KW.OrgKeywords String)
@@ -103,7 +103,7 @@ extractFromRoot =
                     else
                         foldl (flip Org.meta_prop) orgf $ unwrap props
                 GoesTo _ (D drawer) -> orgf -- TODO
-                GoesTo _ (B block)  -> orgf -- TODO
+                GoesTo _ (B _ block)  -> orgf -- TODO
 
         applySub { orgf, target } rule = case Debug.spy "rule" rule of
             Rule "headline" hlRules ->
@@ -132,8 +132,8 @@ extractFromRoot =
                                 wordsToAdd' = if hasLines then Org.br : wordsToAdd else wordsToAdd -- a kind of hack to add breaks to the contents of the blocks
                             in
                             case subject of
-                                B block ->
-                                    GoesTo { hasLines : true } $ B $ Org.inject_words (Debug.spy "block-words-to-inject" wordsToAdd') block
+                                B n block ->
+                                    GoesTo { hasLines : true } $ B n $ Org.inject_words (Debug.spy "block-words-to-inject" wordsToAdd') block
                                 D drawer ->
                                     GoesTo { hasLines : true } $ D $ Org.drawer_add (Debug.spy "drawer-words-to-inject" wordsToAdd') drawer
                                 P props ->
@@ -149,29 +149,22 @@ extractFromRoot =
                 { orgf : orgf # Org.append_bl Org.hr
                 , target
                 }
-            Rule "block-begin-line" [ TextRule "block-name" name ] ->
+            Rule "block-begin-line" [ TextRule "block-name" blockName ] ->
                 { orgf
-                , target : case name of
-                    "src"     -> GoesTo { hasLines : false } $ B $ Org.code' []
-                    "quote"   -> GoesTo { hasLines : false } $ B $ Org.quote []
-                    "example" -> GoesTo { hasLines : false } $ B $ Org.example []
-                    "comment" -> GoesTo { hasLines : false } $ B $ Org.bcomment []
-                    -- TODO: support other blocks:
-                    -- COMMENT|comment|EXAMPLE|example|EXPORT|export|SRC|src
-                    -- VERSE|verse
-                    -- CENTER|center|QUOTE|quote
-                    _ -> TopLevel
+                , target : _startBlock target blockName Nothing
                 }
-            Rule "block-begin-line" [ TextRule "block-name" name, TextRule "block-parameters" params ] ->
+            Rule "block-begin-line" [ TextRule "block-name" blockName, TextRule "block-parameters" blockParams ] ->
                 { orgf
-                , target : case name of
-                    "src" -> GoesTo { hasLines : false } $ B $ Org.codeIn' params [] -- # Org.wdoc (Org.snoc_bl $ Org.codeIn' params []) orgf
-                    _ -> target
+                , target : _startBlock target blockName $ Just blockParams
                 }
-            Rule "block-end-line" [ TextRule "block-name" name ] ->
+            Rule "block-end-line" [ TextRule "block-name" blockName ] ->
                 { orgf :
                     case target of
-                        GoesTo _ (B block) -> orgf # Org.append_bl block
+                        GoesTo _ (B { nested } block) ->
+                            if not nested then
+                                orgf # Org.append_bl block
+                            else
+                                orgf # Org.append_bl (Org.inject_words [ Org.br, Org.text $ "#+end_" <> blockName ] block)
                         _ -> orgf -- should not happen
                 , target : TopLevel
                 }
@@ -242,6 +235,36 @@ extractFromRoot =
                 , target
                 }
             _ -> { orgf, target }
+
+        _startBlock target blockName mbParams =
+            case target of
+                TopLevel ->
+                    case blockName of
+                        "src"     -> GoesTo { hasLines : false } $ B { nested : false }
+                                        $ case mbParams of
+                                            Nothing -> Org.code' []
+                                            Just params -> Org.codeIn' params []
+                        "quote"   -> GoesTo { hasLines : false } $ B { nested : false } $ Org.quote []
+                        "example" -> GoesTo { hasLines : false } $ B { nested : false } $ Org.example []
+                        "comment" -> GoesTo { hasLines : false } $ B { nested : false } $ Org.bcomment []
+                        _ -> TopLevel
+                        -- TODO: support other blocks:
+                        -- COMMENT|comment|EXAMPLE|example|EXPORT|export|SRC|src
+                        -- VERSE|verse
+                        -- CENTER|center|QUOTE|quote
+                -- when previous block wasn't finished, we should append the text to the block
+                GoesTo _ (B _ block) ->
+                    GoesTo { hasLines : true }
+                        $ B { nested : true }
+                        $ Org.inject_words
+                                [ Org.br, Org.text "#+begin_", Org.text blockName
+                                , case mbParams of
+                                    Just params -> Org.text $ " " <> params
+                                    Nothing -> Org.EmptyW
+                                ]
+                                block
+                GoesTo _ _ -> target
+                _ -> TopLevel
 
         _finishDrawer orgf target =
             case target of
