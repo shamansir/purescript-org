@@ -2,8 +2,6 @@ module Data.Text.Format.Org.Ebnf where
 
 import Prelude
 
-import Debug as Debug
-
 import Data.Maybe (Maybe(..), maybe, fromMaybe)
 import Data.String (Pattern(..))
 import Data.String (joinWith, length, split, uncons, codePointFromChar, drop, toLower, trim, stripSuffix) as String
@@ -106,7 +104,7 @@ extractFromRoot =
                 GoesTo _ (D drawer) -> orgf -- TODO
                 GoesTo _ (B _ block)  -> orgf -- TODO
 
-        applySub { orgf, target } rule = case Debug.spy "rule" rule of
+        applySub { orgf, target } = case _ of
             Rule "headline" hlRules ->
                 { orgf : fromMaybe orgf $ Array.uncons hlRules <#> \{ head, tail } ->
                     case head of
@@ -134,9 +132,9 @@ extractFromRoot =
                             in
                             case subject of
                                 B n block ->
-                                    GoesTo { hasLines : true } $ B n $ Org.inject_words (Debug.spy "block-words-to-inject" wordsToAdd') block
+                                    GoesTo { hasLines : true } $ B n $ Org.inject_words wordsToAdd' block
                                 D drawer ->
-                                    GoesTo { hasLines : true } $ D $ Org.drawer_add (Debug.spy "drawer-words-to-inject" wordsToAdd') drawer
+                                    GoesTo { hasLines : true } $ D $ Org.drawer_add wordsToAdd' drawer
                                 P props ->
                                     GoesTo { hasLines : true } $ P $ Prop.snoc props $ _extractProp $ String.joinWith "" $ collectTextOnly <$> _extractWordsRules contentRules
                                 K kws ->
@@ -296,8 +294,8 @@ extractFromRoot =
                     else foldl (flip Org.meta_prop) orgf $ unwrap props
                 _ -> orgf -- should not happen
 
-        _extractWordsRules contentRules =
-            case Debug.spy "content-rules" contentRules of
+        _extractWordsRules =
+            case _ of
                 [ Rule "text" wordsRules ] ->
                     wordsRules
                 _ -> []
@@ -331,8 +329,8 @@ extractFromRoot =
                                 Prop.propn nameStr
                 _ -> Prop.prop "ERR" "ERR_VAL" -- FIXME: return `Maybe`
 
-        applyListItemRule litem rule =
-            case Debug.spy "list-rule" rule of
+        applyListItemRule litem =
+            case _ of
                 TextRule "indent" indent -> litem # Org.det_indent indent
                 TextRule "list-item-bullet" bullet -> litem # Org.det_ltype (_extractListType bullet)
                 TextRule "list-item-counter" counter -> litem # Org.det_ltype (Org.Prefixed counter) -- litem # Org.det_counter (Org.Counter $ fromMaybe 0 $ Int.fromString counter)
@@ -347,8 +345,8 @@ extractFromRoot =
                 Rule "text" textRules -> litem # Org.det_add_text (wordsFromRules textRules)
                 _ -> litem
 
-        applySecHeadRule sec rule =
-            case Debug.spy "sec-head-rule" rule of
+        applySecHeadRule sec =
+            case _ of
                 Rule "text" wordsRules ->
                     sec # Org.sec_head (wordsFromRules wordsRules)
                 Rule "planning" planningRules ->
@@ -379,8 +377,8 @@ extractFromRoot =
                     sec # Org.comment
                 _ -> sec
 
-        applyTimestampRule ts rule =
-            case Debug.spy "timestamp-rule" rule of
+        applyTimestampRule ts =
+            case _ of
                 Rule "ts-inner-w-time"  [ TextRule "ts-date" dateStr, TextRule "ts-day" _, TextRule "ts-time" timeStr ] ->
                     ts # Org.chdate (Org.parseDate dateStr) # Org.at_ (Org.parseTime timeStr)
                 Rule "ts-inner-wo-time" [ TextRule "ts-date" dateStr, TextRule "ts-day" _ ] ->
@@ -407,8 +405,8 @@ extractFromRoot =
                         (fromMaybe Org.Day $ Org.parseInterval unitStr)
                 _ -> ts
 
-        applySecPlanningRule sec rule =
-            case Debug.spy "sec-plan-rule" rule of
+        applySecPlanningRule sec =
+            case _ of
                 Rule "planning-info" [ Rule "planning-keyword" kwRules, Rule "timestamp" tsRules ] ->
                     case kwRules of
                         [ Rule "planning-kw-deadline" [] ]  -> sec # Org.deadline (buildTimeStamp tsRules)
@@ -417,14 +415,14 @@ extractFromRoot =
                         _ -> sec
                 _ -> sec
 
-        extractRowRule rule =
-            case Debug.spy "table-row-rule" rule of
+        extractRowRule =
+            case _ of
                 Rule "table-row" [ Rule "table-row-cells" cellsRules ] -> NEA.fromArray (Array.catMaybes $ extractCellRule <$> cellsRules) <#> Org.Row
                 Rule "table-row" [ TextRule "table-row-sep" sepText ] -> Just $ Org.BreakT
                 _ -> Nothing
 
-        extractCellRule rule =
-            case Debug.spy "table-cell-rule" rule of
+        extractCellRule =
+            case _ of
                 TextRule "table-cell" cellText -> Just $ Org.Column $ NEA.singleton $ Org.text cellText
                 _ -> Nothing
 
@@ -434,8 +432,8 @@ extractFromRoot =
                 [ Rule "timestamp-inactive" [ Rule "ts-inner" innerTsRules ] ] -> foldl applyTimestampRule (Org.idate $ Org.d 0 0 0) innerTsRules
                 _ -> Org.adate $ Org.d 0 0 0
 
-        collectTextOnly rule =
-            case Debug.spy "word-txt-rule" rule of
+        collectTextOnly =
+            case _ of
                 TextRule "text-normal" textVal ->
                     textVal
                 TextRule "text-sty-code" textVal ->
@@ -456,8 +454,8 @@ extractFromRoot =
                     "^" <> textVal
                 _ -> ""
 
-        toWordsFromRule rule =
-            case Debug.spy "word-rule" rule of
+        toWordsFromRule =
+            case _ of
                 TextRule "text-normal" textVal ->
                     Just $ Org.Plain textVal
                 -- FIXME: EBNF parser can not parse inner formatting, but we can do some post-processing
@@ -478,13 +476,9 @@ extractFromRoot =
                 Rule "text-sup" [ TextRule "text-subsup-word" textVal ] ->
                     Just $ Org.sups textVal
                 Rule "link-format" [ Rule "link" linkRules, TextRule "link-description" linkDescr ] ->
-                    let
-                        _ = Debug.spyWith "link-rules" show linkRules
-                    in Just $ Org.to (createLinkTarget linkRules) linkDescr
+                    Just $ Org.to (createLinkTarget linkRules) linkDescr
                 Rule "link-format" [ Rule "link" linkRules ] ->
-                    let
-                        _ = Debug.spyWith "link-rules" show linkRules
-                    in Just $ Org.ref (createLinkTarget linkRules)
+                    Just $ Org.ref (createLinkTarget linkRules)
                 Rule "footnote-link" [ TextRule "fn-label" label ] ->
                     Just $ Org.fn label
                 Rule "footnote-link" [ TextRule "fn-label" label, RuleMatch text ] ->
@@ -528,14 +522,13 @@ instance ReadForeign FromEbnf where
     readImpl json =
         (readImpl json :: F ({ data :: Array Match })) <#> (\rec ->
             let
-                _ = Debug.spyWith "matches" show rec.data
-                mbRootRule = Debug.spyWith "rules" show
-                        $ case Array.uncons rec.data of
-                            Just { head, tail } ->
-                                case head of
-                                    Text "S" -> Just $ Rule "S" $ Array.catMaybes $ toRule <$> tail
-                                    _ -> Nothing
-                            Nothing -> Nothing
+                mbRootRule =
+                    case Array.uncons rec.data of
+                        Just { head, tail } ->
+                            case head of
+                                Text "S" -> Just $ Rule "S" $ Array.catMaybes $ toRule <$> tail
+                                _ -> Nothing
+                        Nothing -> Nothing
             in
                 FromEbnf $ maybe Org.empty extractFromRoot mbRootRule
         )
