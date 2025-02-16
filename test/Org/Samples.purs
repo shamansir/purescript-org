@@ -58,12 +58,12 @@ zeroIndentedSamples =
     , { file : Test04a.test, slug : "04a-formatting-headings", friendly : "04. formatting: headings (a)" }
     , { file : Test04b.test, slug : "04b-formatting-blocks", friendly : "04. formatting: blocks (b)" }
     , { file : Test04c.test, slug : "04c-formatting-lists", friendly : "04. formatting: lists (c)" }
-    -- , { file : Test04d.test, slug : "04d-formatting-tables", friendly : "04. formatting: tables (d)" }
+    , { file : Test04d.test, slug : "04d-formatting-tables", friendly : "04. formatting: tables (d)" }
     , { file : Test04e.test, slug : "04e-formatting-footnotes", friendly : "04. formatting: footnotes (e)" }
     , { file : Test04f.test, slug : "04f-formatting-comments", friendly : "04. formatting: comments (f)" }
     , { file : Test04g.test, slug : "04g-formatting-dates", friendly : "04. formatting: dates (g)" }
     , { file : Test04h.test, slug : "04h-formatting-properties-and-keywords", friendly : "04. formatting: properties & keywords (h)" }
-    -- , { file : Test04i.test, slug : "04i-formatting-drawers", friendly : "04. formatting: drawers (i)" }
+    , { file : Test04i.test, slug : "04i-formatting-drawers", friendly : "04. formatting: drawers (i)" }
     ]
 
 

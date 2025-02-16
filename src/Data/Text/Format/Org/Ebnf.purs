@@ -18,6 +18,7 @@ import Data.Text.Format.Org.Property as Prop
 import Data.Foldable (foldl)
 import Data.Array ((:))
 import Data.Array (head, catMaybes, uncons, singleton) as Array
+import Data.Array.NonEmpty (fromArray, singleton) as NEA
 import Data.Either (Either(..))
 import Data.Newtype (unwrap)
 
@@ -234,6 +235,15 @@ extractFromRoot =
                         )
                 , target
                 }
+            Rule "table" [ Rule "table-org" tableRows ] ->
+                { orgf : orgf # Org.append_bl
+                    (case Org.last_bl_of $ Org.docf orgf of
+                        -- append line break if the table was last
+                        Just (Org.Table _ _) -> Org.joinB Org.blank $ Org.table $ Array.catMaybes $ extractRowRule <$> tableRows
+                        _ ->                    Org.table $ Array.catMaybes $ extractRowRule <$> tableRows
+                    )
+                , target : TopLevel
+                }
             _ -> { orgf, target }
 
         _startBlock target blockName mbParams =
@@ -406,6 +416,17 @@ extractFromRoot =
                         [ Rule "planning-kw-closed" [] ]    -> sec # Org.close    (buildTimeStamp tsRules)
                         _ -> sec
                 _ -> sec
+
+        extractRowRule rule =
+            case Debug.spy "table-row-rule" rule of
+                Rule "table-row" [ Rule "table-row-cells" cellsRules ] -> NEA.fromArray (Array.catMaybes $ extractCellRule <$> cellsRules) <#> Org.Row
+                Rule "table-row" [ TextRule "table-row-sep" sepText ] -> Just $ Org.BreakT
+                _ -> Nothing
+
+        extractCellRule rule =
+            case Debug.spy "table-cell-rule" rule of
+                TextRule "table-cell" cellText -> Just $ Org.Column $ NEA.singleton $ Org.text cellText
+                _ -> Nothing
 
         buildTimeStamp tsRules =
             case tsRules of

@@ -46,13 +46,24 @@ layout = layoutWith defaultRO
 
 layoutWith :: RO -> OrgFile -> Doc
 layoutWith ro (OrgFile { meta, props, doc }) =
-    case (KW.isEmpty meta /\ Org.isDocEmpty doc) of
-        (true /\ true) -> D.nil
-        (false /\ true) -> renderKWMetaBlock
-        (true /\ false) -> layoutDoc ro root doc
-        (false /\ false) ->
+    case (KW.isEmpty meta /\ Prop.isEmpty props /\ Org.isDocEmpty doc) of
+        (true /\ true /\ true) -> D.nil
+        (false /\ true /\ true) -> renderKWMetaBlock
+        (true /\ true /\ false) -> layoutDoc ro root doc
+        (false /\ false /\ false) ->
             renderKWMetaBlock
             <//> renderPropsMetaBlock
+            <//> layoutDoc ro root doc
+        (false /\ false /\ true) ->
+            renderKWMetaBlock
+            <//> renderPropsMetaBlock
+        (false /\ true /\ false) ->
+            renderKWMetaBlock
+            <//> layoutDoc ro root doc
+        (true /\ false /\ true) ->
+            renderPropsMetaBlock
+        (true /\ false /\ false) ->
+            renderPropsMetaBlock
             <//> layoutDoc ro root doc
     where
         renderKWMetaBlock = meta # KW.toJson # unwrap # map (either layoutProperty layoutKeyword) # D.stack
