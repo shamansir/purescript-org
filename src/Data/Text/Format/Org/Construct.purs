@@ -732,6 +732,10 @@ wprop :: OrgProperty String -> Section -> Section
 wprop prop = __qset $ \sec -> sec { props = Prop.snoc sec.props prop }
 
 
+wprops :: Array (OrgProperty String) -> Section -> Section
+wprops nextProps = __qset $ \sec -> sec { props = wrap $ unwrap sec.props <> nextProps }
+
+
 drawer :: String -> Array Words -> Section -> Section
 drawer name content = sec_append_drawer $ mk_drawer name content
 

@@ -85,11 +85,27 @@ extractFromRoot :: Rule -> OrgFile
 extractFromRoot =
     case _ of
         Rule "S" rules ->
-            _.orgf $ foldl applySub init rules
+            appyRemainings $ foldl applySub init rules
         _ -> Org.empty
     where
 
-        applySub { orgf,target } rule = case Debug.spy "rule" rule of
+        appyRemainings { orgf, target } =
+            case target of
+                TopLevel -> orgf
+                GoesTo _ (K kws)    ->
+                    if (Org.blocksn $ Org.docf orgf) > 0 || (Org.sectionsn $ Org.docf orgf) > 0 then
+                        Org.wdoc (Org.wlast_bl_rec $ Org.with_kws $ unwrap kws) orgf
+                    else
+                        foldl (flip Org.meta_kw) orgf $ unwrap kws
+                GoesTo _ (P props)  ->
+                    if (Org.blocksn $ Org.docf orgf) > 0 || (Org.sectionsn $ Org.docf orgf) > 0 then
+                        Org.wdoc (Org.wlast_sec $ Org.wprops $ unwrap props) orgf
+                    else
+                        foldl (flip Org.meta_prop) orgf $ unwrap props
+                GoesTo _ (D drawer) -> orgf -- TODO
+                GoesTo _ (B block)  -> orgf -- TODO
+
+        applySub { orgf, target } rule = case Debug.spy "rule" rule of
             Rule "headline" hlRules ->
                 { orgf : fromMaybe orgf $ Array.uncons hlRules <#> \{ head, tail } ->
                     case head of
