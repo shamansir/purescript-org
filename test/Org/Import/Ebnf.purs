@@ -5,13 +5,9 @@ import Prelude
 import Effect.Class (liftEffect, class MonadEffect)
 import Control.Monad.Error.Class (class MonadThrow)
 
-import Data.String (Pattern(..), Replacement(..))
-import Data.String (replace) as String
-
 import Data.Text.Doc as D
-import Data.Text.Format.Org.Types (OrgFile)
-import Data.Text.Format.Org.Render as R
-import Data.Text.Diff as Diff
+import Data.Text.Format.Org.Render (defaultRO, RenderOptions, layoutWith) as R
+import Data.Text.Diff (diffStackCompare) as Diff
 import Data.Either (Either(..))
 
 import Node.Encoding (Encoding(..))
@@ -57,5 +53,4 @@ qtest fileSlug ro  = do
         Right (FromEbnf orgFile)-> do
             orgTestText <- liftEffect $ readTextFile UTF8 ("./test/examples/org-test/" <> fileSlug <> ".org")
             (D.render renderOptions $ R.layoutWith ro orgFile)
-                    `Diff.diffStackCompare`
-                    {- `Diff.diffCompare` -} orgTestText
+                `Diff.diffStackCompare` orgTestText -- `shouldEqual` || `Diff.diffCompare`

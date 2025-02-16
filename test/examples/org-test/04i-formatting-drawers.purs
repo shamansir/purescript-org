@@ -20,7 +20,7 @@ test =
                     , Org.blank -- FIXME:
                     , Org.list Hyphened
                         [ Org.item1 $ Org.text "Item 1\n"
-                        , (Org.item1 $ Org.text "Item 2\n")
+                        , (Org.item1 $ Org.text "Item 2")
                             # Org.idrawer1 "drawer" (Org.text "inside item 2")
                         , (Org.item1 $ Org.text "Item 3\n")
                         ]

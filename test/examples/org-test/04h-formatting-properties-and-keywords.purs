@@ -17,15 +17,17 @@ test =
                 # Org.wprop (Org.prop "NAME" "VALUE")
                 # Org.wprop (Org.propn "NAME")
                 # Org.wprop (Org.propapp "NAME" "VALUE")
-                -- # Org.wprop (Org.propapp "NAME") FIXME
+                # Org.wprop (Org.propappn "NAME")
             , Org.sec1 1 (Org.text "Heading")
                     (Org.db
-                        [ Org.with_kws
+                        [ Org.blank
+                        , Org.with_kws
                             [ Org.kw "KEY" "VALUE"
-                            , Org.kwopt "KEY" "VALUE" "OPTVAL"
+                            , Org.kwopt "KEY" "OPTVAL" "VALUE"
                             , Org.kw "attr_BACKEND" "VALUE"
                             ]
                             $ Org.para1 $ Org.text "Some content"
+                        , Org.blank
                         , Org.with_kws
                             [ Org.kw "name" "image-name"
                             , Org.kw "caption" "This is a caption for"
