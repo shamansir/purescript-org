@@ -45,16 +45,21 @@ layout = layoutWith defaultRO
 
 
 layoutWith :: RO -> OrgFile -> Doc
-layoutWith ro (OrgFile { meta, doc }) =
+layoutWith ro (OrgFile { meta, props, doc }) =
     case (KW.isEmpty meta /\ Org.isDocEmpty doc) of
         (true /\ true) -> D.nil
         (false /\ true) -> renderKWMetaBlock
         (true /\ false) -> layoutDoc ro root doc
         (false /\ false) ->
             renderKWMetaBlock
+            <//> renderPropsMetaBlock
             <//> layoutDoc ro root doc
     where
         renderKWMetaBlock = meta # KW.toJson # unwrap # map (either layoutProperty layoutKeyword) # D.stack
+        renderPropsMetaBlock =
+            if Prop.hasProperties props then
+                props # Prop.toJson # unwrap # map layoutProperty # D.stack
+            else D.nil
 
 
 layoutDoc :: RO -> Deep -> OrgDoc -> Doc
@@ -297,6 +302,8 @@ layoutWords = case _ of
             Org.InlineCode -> D.wrap "~" doc
             Org.Verbatim -> D.wrap "=" doc
             Org.Highlight -> D.wrap "^^" doc
+            Org.Subscript -> D.text "_" <> doc
+            Org.Superscript -> D.text "^" <> doc
             Org.Error -> D.wrap "X" doc
             Org.Inline key -> D.bracket ("@@" <> inlineKey key <> ":") doc "@@"
             Org.And mka mkb -> markWith mkb $ markWith mka doc
@@ -453,11 +460,12 @@ layoutItemsWith ro parentSubj deep lt items  =
 
 layoutProperty :: Prop.JsonPropertyRec String -> Doc
 layoutProperty prop =
-    case prop.value of
+    let propName = if not prop.append then D.text prop.name else D.text prop.name <> D.text "+"
+    in case prop.value of
         Just value ->
-            D.wrap ":" (D.text prop.name) <+> D.text value
+            D.wrap ":" propName <+> D.text value
         Nothing ->
-            D.wrap ":" (D.text prop.name)
+            D.wrap ":" propName
 
 
 layoutKeyword :: KW.JsonKeywordRec String -> Doc

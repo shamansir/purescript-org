@@ -57,4 +57,5 @@ qtest fileSlug ro  = do
         Right (FromEbnf orgFile)-> do
             orgTestText <- liftEffect $ readTextFile UTF8 ("./test/examples/org-test/" <> fileSlug <> ".org")
             (D.render renderOptions $ R.layoutWith ro orgFile)
-                    `Diff.ensureEqual` orgTestText
+                    `Diff.diffStackCompare`
+                    {- `Diff.diffCompare` -} orgTestText

@@ -2,11 +2,11 @@ import { parser } from "instaparse";
 import fs from 'node:fs';
 
 
-// const testDir = './test/examples/org-test/';
-// const orgSource = '04l-formatting-properties-and-keywords-ext';
+const testDir = './test/examples/org-test/';
+const orgSource = '04h-formatting-properties-and-keywords';
 
-const testDir = './test/examples/';
-const orgSource = 'test';
+// const testDir = './test/examples/';
+// const orgSource = 'test';
 
 fs.readFile('./test/ParseUtils/org.ebnf', 'utf8', (err, grammar) => {
   if (err) {

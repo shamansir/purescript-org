@@ -25,7 +25,7 @@ test =
                             , Org.kwopt "KEY" "VALUE" "OPTVAL"
                             , Org.kw "attr_BACKEND" "VALUE"
                             ]
-                            Org.blank
+                            $ Org.para1 $ Org.text "Some content"
                         , Org.with_kws
                             [ Org.kw "name" "image-name"
                             , Org.kw "caption" "This is a caption for"

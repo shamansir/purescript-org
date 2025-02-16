@@ -10,9 +10,11 @@
 :PROPERTIES:
 :CUSTOM_ID: someid
 :END:
+
 #+KEY: VALUE
 #+KEY[OPTVAL]: VALUE
 #+attr_BACKEND: VALUE
+Some content
 
 #+name: image-name
 #+caption: This is a caption for

@@ -388,6 +388,14 @@ s :: String -> Words
 s = marked Strike
 
 
+subs :: String -> Words
+subs = marked Subscript
+
+
+sups :: String -> Words
+sups = marked Superscript
+
+
 a :: String -> String -> Words
 a = to <<< Remote
 

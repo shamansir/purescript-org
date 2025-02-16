@@ -6,7 +6,7 @@ import Debug as Debug
 
 import Data.Maybe (Maybe(..), maybe, fromMaybe)
 import Data.String (Pattern(..))
-import Data.String (joinWith, length, split, uncons, codePointFromChar, drop, toLower) as String
+import Data.String (joinWith, length, split, uncons, codePointFromChar, drop, toLower, trim, stripSuffix) as String
 import Data.String.CodePoints as SCP
 import Data.String.CodeUnits as SCU
 import Data.Int (fromString) as Int
@@ -19,6 +19,7 @@ import Data.Foldable (foldl)
 import Data.Array ((:))
 import Data.Array (head, catMaybes, uncons, singleton) as Array
 import Data.Either (Either(..))
+import Data.Newtype (unwrap)
 
 import Control.Alt ((<|>))
 
@@ -57,6 +58,7 @@ data Subject
     = B Org.Block
     | D Org.Drawer
     | P (Prop.OrgProperties String)
+    | K (KW.OrgKeywords String)
 
 
 data ContentTarget
@@ -88,10 +90,6 @@ extractFromRoot =
     where
 
         applySub { orgf,target } rule = case Debug.spy "rule" rule of
-            Rule "other-keyword-line" [ TextRule "kw-name" kwTitle, TextRule "kw-value" kwValue ] ->
-                { orgf : orgf # Org.meta_kw (Org.kw kwTitle kwValue)
-                , target
-                }
             Rule "headline" hlRules ->
                 { orgf : fromMaybe orgf $ Array.uncons hlRules <#> \{ head, tail } ->
                     case head of
@@ -104,7 +102,10 @@ extractFromRoot =
             Rule "content-line" contentRules ->
                 { orgf :
                     case target of
-                        TopLevel -> orgf # Org.append_bl (blockFrom $ _extractWordsRules contentRules) -- TODO: also collect to `ContentTarget` before?
+                        TopLevel ->
+                            orgf # Org.append_bl (blockFrom $ _extractWordsRules contentRules) -- TODO: also collect to `ContentTarget` before?
+                        GoesTo _ (K kws) ->
+                            orgf # Org.append_bl (Org.with_kws (unwrap kws) $ blockFrom $ _extractWordsRules contentRules)
                         _ -> orgf
                 , target :
                     case target of
@@ -120,7 +121,9 @@ extractFromRoot =
                                 D drawer ->
                                     GoesTo { hasLines : true } $ D $ Org.drawer_add (Debug.spy "drawer-words-to-inject" wordsToAdd') drawer
                                 P props ->
-                                    target -- FIXME: TODO
+                                    GoesTo { hasLines : true } $ P $ Prop.snoc props $ _extractProp $ String.joinWith "" $ collectTextOnly <$> _extractWordsRules contentRules
+                                K kws ->
+                                    TopLevel -- we reset the level and apply them above
                 }
             Rule "empty-line" [] ->
                 { orgf : orgf # Org.append_bl Org.blank
@@ -137,6 +140,10 @@ extractFromRoot =
                     "quote"   -> GoesTo { hasLines : false } $ B $ Org.quote []
                     "example" -> GoesTo { hasLines : false } $ B $ Org.example []
                     "comment" -> GoesTo { hasLines : false } $ B $ Org.bcomment []
+                    -- TODO: support other blocks:
+                    -- COMMENT|comment|EXAMPLE|example|EXPORT|export|SRC|src
+                    -- VERSE|verse
+                    -- CENTER|center|QUOTE|quote
                     _ -> TopLevel
                 }
             Rule "block-begin-line" [ TextRule "block-name" name, TextRule "block-parameters" params ] ->
@@ -151,6 +158,14 @@ extractFromRoot =
                         GoesTo _ (B block) -> orgf # Org.append_bl block
                         _ -> orgf -- should not happen
                 , target : TopLevel
+                }
+            Rule "other-keyword-line" [ TextRule "kw-name" kwTitle, TextRule "kw-value" kwValue ] ->
+                { orgf
+                , target :
+                    case target of
+                        GoesTo { hasLines } (K kws) ->
+                            GoesTo { hasLines } $ K $ KW.snoc kws $ KW.kw kwTitle kwValue
+                        _ -> GoesTo { hasLines : false } $ K $ KW.snoc KW.empty $ KW.kw kwTitle kwValue
                 }
             TextRule "fixed-width-line" fwLine ->
                 { orgf : orgf # Org.append_bl (Org.fw [ Org.text fwLine ])
@@ -172,10 +187,20 @@ extractFromRoot =
                 let
                      -- although rule is named `drawer-begin-line`, drawer end comes from parser this way
                     isDrawerEnd = String.toLower drawerName == "end"
+                    isProperties = String.toLower drawerName == "properties"
                 in
-                { orgf : if isDrawerEnd then _finishDrawer orgf target else orgf
-                , target : if not isDrawerEnd then GoesTo { hasLines : false } $ D $ Org.mk_drawer drawerName [] else TopLevel
-                }
+                    { orgf : if isDrawerEnd then _finishDrawer orgf target else orgf
+                    , target : if not isDrawerEnd && not isProperties then
+                            case target of
+                                GoesTo _ (P props) ->
+                                    -- FIXME: it handles the issue when already parsing `PROPERTIES` block and there's only `:NAME:` w/o value, which is a valid property,
+                                    -- FIXME: but parser treats it as a start of drawer with the name `NAME`. See `04h-formatting-properties-and-keywords.ebnf.json`
+                                     GoesTo { hasLines : false } $ P $ Prop.snoc props $ Prop.propn drawerName
+                                _ -> GoesTo { hasLines : false } $ D $ Org.mk_drawer drawerName []
+                        else if isProperties then
+                            GoesTo { hasLines : false } $ P $ Prop.empty
+                        else TopLevel
+                    }
             Rule "drawer-end-line" [] ->
                 { orgf : _finishDrawer orgf target
                 , target : TopLevel
@@ -216,6 +241,10 @@ extractFromRoot =
                                 Nothing -> sec # Org.sec_append_drawer drawer
                     in
                         orgf # Org.wdoc (Org.wlast_sec addDrawer)
+                GoesTo _ (P props) ->
+                    if (Org.sectionsn (Org.docf orgf) > 0) then
+                        orgf # Org.wdoc (Org.wlast_sec $ \sec -> foldl (flip Org.wprop) sec $ unwrap props)
+                    else foldl (flip Org.meta_prop) orgf $ unwrap props
                 _ -> orgf -- should not happen
 
         _extractWordsRules contentRules =
@@ -235,6 +264,23 @@ extractFromRoot =
             "-" -> Org.Halfcheck
             " " -> Org.Uncheck
             _ -> Org.Uncheck
+
+        _extractProp propText =
+            case String.split (Pattern ":") propText of
+                [ _, nameStr, valStr ] ->
+                    let trimmedValStr = String.trim valStr
+                    in case String.stripSuffix (Pattern "+") nameStr of
+                        Just nameWithoutSuffix ->
+                            if String.length trimmedValStr > 0 then
+                                Prop.propapp nameWithoutSuffix trimmedValStr
+                            else
+                                Prop.propappn nameWithoutSuffix
+                        Nothing ->
+                            if String.length trimmedValStr > 0 then
+                                Prop.prop nameStr trimmedValStr
+                            else
+                                Prop.propn nameStr
+                _ -> Prop.prop "ERR" "ERR_VAL" -- FIXME: return `Maybe`
 
         applyListItemRule litem rule =
             case Debug.spy "list-rule" rule of
@@ -328,6 +374,28 @@ extractFromRoot =
                 [ Rule "timestamp-inactive" [ Rule "ts-inner" innerTsRules ] ] -> foldl applyTimestampRule (Org.idate $ Org.d 0 0 0) innerTsRules
                 _ -> Org.adate $ Org.d 0 0 0
 
+        collectTextOnly rule =
+            case Debug.spy "word-txt-rule" rule of
+                TextRule "text-normal" textVal ->
+                    textVal
+                TextRule "text-sty-code" textVal ->
+                    "~" <> textVal <> "~"
+                TextRule "text-sty-bold" textVal ->
+                    "*" <> textVal <> "*"
+                TextRule "text-sty-italic" textVal ->
+                    "/" <> textVal <> "/"
+                TextRule "text-sty-verbatim" textVal ->
+                    "=" <> textVal <> "="
+                TextRule "text-sty-strikethrough" textVal ->
+                    "+" <> textVal <> "+"
+                TextRule "text-sty-underlined" textVal ->
+                    "_" <> textVal <> "_"
+                Rule "text-sub" [ TextRule "text-subsup-word" textVal ] ->
+                    "_" <> textVal
+                Rule "text-sup" [ TextRule "text-subsup-word" textVal ] ->
+                    "^" <> textVal
+                _ -> ""
+
         toWordsFromRule rule =
             case Debug.spy "word-rule" rule of
                 TextRule "text-normal" textVal ->
@@ -345,6 +413,10 @@ extractFromRoot =
                     Just $ Org.s textVal
                 TextRule "text-sty-underlined" textVal ->
                     Just $ Org.u textVal
+                Rule "text-sub" [ TextRule "text-subsup-word" textVal ] ->
+                    Just $ Org.subs textVal
+                Rule "text-sup" [ TextRule "text-subsup-word" textVal ] ->
+                    Just $ Org.sups textVal
                 Rule "link-format" [ Rule "link" linkRules, TextRule "link-description" linkDescr ] ->
                     let
                         _ = Debug.spyWith "link-rules" show linkRules

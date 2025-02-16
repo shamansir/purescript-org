@@ -69,7 +69,7 @@ data Block
     | DetachedItem DetachedListItem -- used only for `EBNF` parsing
     | Table (Maybe String) (NonEmptyArray TableRow)
     | Paragraph (NonEmptyArray Words)
-    | WithKeyword (OrgKeyword String) Block
+    | WithKeyword (OrgKeyword String) Block -- TODO: rename 'Affilated': https://orgmode.org/worg/dev/org-syntax-edited.html#Keywords
     | HRule
     | LComment (Array String)
     | FixedWidth (NonEmptyArray Words)
@@ -121,6 +121,8 @@ data MarkupKey
     | Inline InlineKey
     | Strike
     | Error
+    | Subscript
+    | Superscript
     | And MarkupKey MarkupKey
 
 
@@ -873,6 +875,8 @@ type MarkupKeyRow =
     , inline :: Case1 InlineKey
     , strike :: Case
     , error :: Case
+    , subscript :: Case
+    , superscript :: Case
     )
 
 
@@ -889,6 +893,8 @@ readMarkupKey =
         , inline : Variant.use1 Inline
         , strike : Variant.use Strike
         , error : Variant.use Error -- FIXME
+        , subscript : Variant.use Subscript -- FIXME
+        , superscript : Variant.use Superscript -- FIXME
         }
 
 
@@ -903,6 +909,8 @@ markupKeyToVariant = case _ of
     Inline key -> Variant.select1 (Proxy :: _ "inline") key
     Strike -> Variant.select (Proxy :: _ "strike")
     Error -> Variant.select (Proxy :: _ "error")
+    Subscript -> Variant.select (Proxy :: _ "subscript")
+    Superscript -> Variant.select (Proxy :: _ "superscript")
     And _ _ -> Variant.select (Proxy :: _ "error") -- we do not encode `And`, we unwrap it in a list of other keys
 
 
@@ -918,6 +926,8 @@ markupKeyFromVariant =
         , inline : Variant.uncase1 >>> Inline
         , strike : Variant.uncase Strike
         , error : Variant.uncase Error -- FIXME
+        , subscript : Variant.uncase Subscript
+        , superscript : Variant.uncase Superscript
         }
 
 
