@@ -21,5 +21,5 @@ main = launchAff_ $ runSpec [consoleReporter] do
     OrgToJson.spec
   describe "Org : to Org"
     OrgToOrg.spec
-  describeOnly "Org : from EBNF JSON"
+  describe "Org : from EBNF JSON"
     EbnfJsonToOrg.spec

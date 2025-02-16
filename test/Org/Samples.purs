@@ -34,19 +34,8 @@ type Sample =
     }
 
 
-data IndentMode
-    = ZeroIndent
-    | SmartIndent
-
-
-samples :: IndentMode -> Array Sample
-samples = case _ of
-    ZeroIndent -> zeroIndentedSamples
-    SmartIndent -> smartIndentedSamples
-
-
-zeroIndentedSamples :: Array Sample
-zeroIndentedSamples =
+samples :: Array Sample
+samples =
     [ { file : Test01.test, slug : "01-empty", friendly : "01. works with the empty sample" }
     , { file : Test02a.test, slug : "02a-meta", friendly : "02. works with the meta sample (a)" }
     , { file : Test02b.test, slug : "02b-meta-special", friendly : "02. works with the special meta sample (b)" }
@@ -64,26 +53,4 @@ zeroIndentedSamples =
     , { file : Test04g.test, slug : "04g-formatting-dates", friendly : "04. formatting: dates (g)" }
     , { file : Test04h.test, slug : "04h-formatting-properties-and-keywords", friendly : "04. formatting: properties & keywords (h)" }
     , { file : Test04i.test, slug : "04i-formatting-drawers", friendly : "04. formatting: drawers (i)" }
-    ]
-
-
-smartIndentedSamples :: Array Sample -- TODO: include only different samples
-smartIndentedSamples =
-    [ { file : Test01.test, slug : "01-empty", friendly : "01. works with the syntax sample" }
-    , { file : Test02a.test, slug : "02a-meta", friendly : "02. works with the meta sample (a)" }
-    , { file : Test02b.test, slug : "02b-meta-special", friendly : "02. works with the special meta sample (b)" }
-    , { file : Test03a.test, slug : "03a-headings-with-no-content", friendly : "03. works with basic headings and levels (a)" }
-    , { file : Test03b.test, slug : "03b-headings-with-content.indented", friendly : "03. works with heading with some content (b)" }
-    , { file : Test03c.test, slug : "03c-headings-with-planning", friendly : "03. works with headings with planning (c)" }
-    , { file : Test03d.test, slug : "03d-headings-with-tags", friendly : "03. works with headings with tags (d)" }
-    , { file : Test03e.test, slug : "03e-basic-structuring.indented", friendly : "03. works with basic structure (e)" }
-    , { file : Test04a.test, slug : "04a-formatting-headings.indented", friendly : "04. formatting: headings (a)" }
-    , { file : Test04b.test, slug : "04b-formatting-blocks", friendly : "04. formatting: blocks (b)" }
-    , { file : Test04c.test, slug : "04c-formatting-lists.indented", friendly : "04. formatting: lists (c)" }
-    , { file : Test04d.test, slug : "04d-formatting-tables", friendly : "04. formatting: tables (d)" }
-    , { file : Test04e.test, slug : "04e-formatting-footnotes", friendly : "04. formatting: footnotes (e)" }
-    , { file : Test04f.test, slug : "04f-formatting-comments.indented", friendly : "04. formatting: comments (f)" }
-    , { file : Test04g.test, slug : "04g-formatting-dates", friendly : "04. formatting: dates (g)" }
-    , { file : Test04h.test, slug : "04h-formatting-properties-and-keywords.indented", friendly : "04. formatting: properties & keywords (h)" }
-    , { file : Test04i.test, slug : "04i-formatting-drawers.indented", friendly : "04. formatting: drawers (i)" }
     ]

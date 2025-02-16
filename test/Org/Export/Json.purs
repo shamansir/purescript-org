@@ -27,7 +27,7 @@ import Test.Spec.Assertions (fail, shouldEqual, shouldNotEqual)
 
 import Test.Utils as U
 
-import Test.Org.Samples (IndentMode(..), samples)
+import Test.Org.Samples (samples)
 
 
 spec :: Spec Unit
@@ -57,8 +57,7 @@ spec = do
             { title : const _.friendly
             , spec : \{ file } -> qjsontest file
             }
-            $ samples ZeroIndent
-
+            $ samples
 
 
 renderOptions :: D.Options

@@ -22,7 +22,7 @@ import Test.Spec.Assertions (shouldEqual, fail)
 
 import Test.Utils as U
 
-import Test.Org.Samples (IndentMode(..), samples)
+import Test.Org.Samples (samples)
 
 import Yoga.JSON (readJSON, E)
 import Data.Text.Format.Org.Ebnf (FromEbnf(..))
@@ -34,10 +34,10 @@ spec = do
   describe "import from EBNF" $ do
 
     U.helper
-        { title : const (_.friendly >>> (<>) "Zero: ")
+        { title : const _.friendly
         , spec : \{ slug, file } -> qtest slug R.defaultRO
         }
-        $ samples ZeroIndent
+        $ samples
 
 
 renderOptions :: D.Options

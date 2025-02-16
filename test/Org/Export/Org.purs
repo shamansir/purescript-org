@@ -17,7 +17,7 @@ import Test.Spec.Assertions (shouldEqual)
 
 import Test.Utils as U
 
-import Test.Org.Samples (IndentMode(..), samples)
+import Test.Org.Samples (samples)
 
 
 spec :: Spec Unit
@@ -31,18 +31,10 @@ spec = do
     -}
 
     U.helper
-        { title : const (_.friendly >>> (<>) "Zero: ")
+        { title : const _.friendly
         , spec : \{ slug, file } -> qtest slug R.defaultRO file
         }
-        $ samples ZeroIndent
-
-    -- it "---" $ pure unit
-
-    U.helper
-        { title : const (_.friendly >>> (<>) "Deep: ")
-        , spec : \{ slug, file } -> qtest slug R.indentByDeep file
-        }
-        $ samples SmartIndent
+        $ samples
 
 
 renderOptions :: D.Options
