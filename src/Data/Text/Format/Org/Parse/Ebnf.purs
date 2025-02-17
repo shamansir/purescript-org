@@ -144,7 +144,7 @@ extractFromRoot =
                                 P props ->
                                     GoesTo { hasLines : true } $ P $ Prop.snoc props $ fromMaybe errorProp $ _extractProp $ String.joinWith "" $ collectTextOnly <$> _extractWordsRules contentRules
                                 L logBook ->
-                                    TopLevel -- there should be no raw lines content in the logboook..... right?
+                                    GoesTo { hasLines : true } $ L $ Org.logbook_cont wordsToAdd' logBook
                                 K kws ->
                                     TopLevel -- we reset the level and apply them above
                 }
@@ -368,11 +368,29 @@ extractFromRoot =
                     else
                         Prop.propn nameStr
 
-        _extractLogBookEntry = case _ of
+        _extractLogBookEntry = case _ of -- FIXME: make `Drawer`s support `Block`s inside (when they are parseable)!
             [ _ {- indent -}
             , _ {- list-item-bullet -}
             , Rule "text" [ TextRule "text-normal" textContent, Rule "timestamp" tsRules ]
-            ] -> Just $ Org.LogBookEntry { text : [ Org.text $ String.trim textContent ], mbTimestamp : Just $ buildTimeStamp tsRules }
+            ] -> Just $ Org.LogBookEntry
+                { text : [ Org.text $ String.trim textContent ]
+                , mbTimestamp : Just $ buildTimeStamp tsRules
+                , continuation : []
+                }
+            [ _ {- indent -}
+            , _ {- list-item-bullet -}
+            , Rule "text"
+                [ TextRule "text-normal" textContent
+                , Rule "timestamp" tsRules
+                , TextRule "text-normal" " "
+                , TextRule "text-normal" "\\" -- markers for continuation
+                , TextRule "text-normal" "\\" -- markers for continuation
+                ]
+            ] -> Just $ Org.LogBookEntry
+                { text : [ Org.text $ String.trim textContent ]
+                , mbTimestamp : Just $ buildTimeStamp tsRules
+                , continuation : []
+                }
             _ -> Nothing
 
         _listItemToWords = case _ of -- FIXME: make `Drawer`s support `Block`s inside (when they are parseable)!
@@ -381,7 +399,6 @@ extractFromRoot =
             , Rule "text" [ TextRule "text-normal" textContent ]
             ] -> [ Org.text indentText, Org.text bulletText, Org.text " ", Org.text textContent ]
             _ -> [ Org.text "" ]
-
 
         applyListItemRule litem =
             case _ of
@@ -436,6 +453,8 @@ extractFromRoot =
                 Rule "ts-inner-w-time" [ TextRule "ts-date" dateStr, TextRule "ts-day" _, TextRule "ts-time" timeStr ] ->
                     ts # Org.chdate (Org.parseDate dateStr) # Org.at_ (Org.parseTime timeStr) -- FIXME: `ts-day` could have different format: `Mo`, `Di`, `Mi` , `Do`, `Fr`, `Sa`, `So`
                 Rule "ts-inner-wo-time" [ TextRule "ts-date" dateStr, TextRule "ts-day" _ ] ->
+                    ts # Org.chdate (Org.parseDate dateStr)
+                Rule "ts-inner-wo-time" [ TextRule "ts-date" dateStr ] ->
                     ts # Org.chdate (Org.parseDate dateStr)
                 Rule "ts-modifiers" modifiers ->
                     foldl applyTimestampRule ts modifiers

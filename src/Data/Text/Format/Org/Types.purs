@@ -62,7 +62,7 @@ newtype OrgDoc =
 
 data Block
     = Of BlockKind (NonEmptyArray Words)
-    | IsDrawer Drawer
+    | IsDrawer Drawer -- FIXME: drawers can contain anything, so another blocks as well, but as `WithKeyword` it causes recursion when converting to JSON
     -- | Centered (NonEmptyArray Words) -- TODO
     | Footnote String (NonEmptyArray Words)
     | List ListItems
@@ -237,6 +237,7 @@ newtype Diary =
 newtype LogBookEntry
     = LogBookEntry
         { text :: Array Words
+        , continuation :: Array (Array Words)
         , mbTimestamp :: Maybe OrgDateTime
         }
 
@@ -1642,6 +1643,7 @@ instance JsonOverRow PlanningRow Planning where
 
 type LogBookEntryRow =
     ( text :: Array Words
+    , continuation :: Array (Array Words)
     , timestamp :: Maybe (Record JsonDateTimeRow)
     )
 
@@ -1649,8 +1651,8 @@ type LogBookEntryRow =
 instance ReadForeign LogBookEntry where readImpl = readImplRow
 instance WriteForeign LogBookEntry where writeImpl = writeImplRow
 instance JsonOverRow LogBookEntryRow LogBookEntry where
-    convert = unwrap >>> \{ text, mbTimestamp } -> { text, timestamp : convert <$> mbTimestamp }
-    load { text, timestamp } = wrap { text, mbTimestamp : load <$> timestamp }
+    convert = unwrap >>> \{ text, mbTimestamp, continuation } -> { text, timestamp : convert <$> mbTimestamp, continuation }
+    load { text, timestamp, continuation } = wrap { text, mbTimestamp : load <$> timestamp, continuation }
 
 
 type DocRow =

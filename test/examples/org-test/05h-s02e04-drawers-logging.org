@@ -13,6 +13,14 @@
 
 * Consulting jobs
 ** NEXT Time management training for ACME company [/]
+:LOGBOOK:
+- Note taken on [2016-06-16 Thu 20:47] \\
+Oh, there's also Tina, the technical writer that is very interested in participating
+in this training.
+- Note taken on [2016-06-16 Thu 20:46] \\
+Thank god, the first day is done. Nice people, but the PHB obviously needs some individual coaching.
+Dogbert doesn't seem to have a lot of interest.
+:END:
 - [X] Day 1 : Brain dump, write everything down
 - [ ] Day 2 : Split layer tasks into smaller tasks
 - [ ] Day 3 : Weekly review
@@ -25,19 +33,12 @@
 - Dogbert: The evil director of Human Resources
 - Asok: An intern that does most of the work
 :END:
-:LOGBOOK:
-- Note taken on [2016-06-16 Thu 20:47] \\
-Oh, there's also Tina, the technical writer that is very interested in participating
-in this training.
-- Note taken on [2016-06-16 Thu 20:46] \\
-Thank god, the first day is done. Nice people, but the PHB obviously needs some individual coaching.
-Dogbert doesn't seem to have a lot of interest.
-:END:
 
 ** NEXT Weekly Review
 SCHEDULED: <2016-06-10 Fri +1w>
-:PROPERTIES:
+:LOGBOOK:
 - State "DONE" from "NEXT" [2016-06-11 Sat 14:14]
+:END:
 
 * Legal obligations
 ** NEXT Prepare tax declaration
@@ -47,11 +48,11 @@ DEADLINE: <2016-06-24 Fri> SCHEDULED: <2016-06-13 Mon>
 
 * Maitenance
 ** NEXT Wash the car
-SCHEDULED: <2016-06-21 Sat ++4w>
-- State "DONE" from "NEXT" [2016-06-11 Sa 14:17]
+SCHEDULED: <2016-06-21 Tue ++4w>
+- State "DONE" from "NEXT" [2016-06-11 Sat 14:17]
 - Washing from outside and vacuum cleaning the inside
 ** PROJ Repair bycicle
-SCHEDULED: <2016-06-21 Sat .+4w>
+SCHEDULED: <2016-06-21 Tue .+4w>
 *** WAITING Delivery of spare part (chain)
 SCHEDULED: <2016-06-14 Tue>
 I have chain ordered, needs to be delivered
@@ -60,7 +61,7 @@ You probably need to re adjust the gear shifting
 
 * Family business :FAMILY:
 ** NEXT Get a birthday gift for wife
-SCHEDULED: <2016-06-11 Sat> DEADLINE: <2016-06-25 Sat>
+DEADLINE: <2016-06-25 Sat> SCHEDULED: <2016-06-11 Sat>
 ** NEXT Watch concert of your kid in school
 SCHEDULED: <2016-06-15 Wed 16:00-17:00>
 - Don't miss that, otherwise kid is dissapointed

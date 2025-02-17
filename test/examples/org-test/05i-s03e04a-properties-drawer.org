@@ -4,9 +4,9 @@
 
 * GTD Related things
 ** NEXT Weekly Review
-SCHEDULED: <2016-06-26 ++1w>
+SCHEDULED: <2016-06-26 Sun ++1w>
 :LOGBOOK:
-- Rescheduled from "[2016-06-24 Fr ++1w]" on "[2016-06-21 Di 19:31]" \\
+- Rescheduled from "[2016-06-24 Fri ++1w]" on "[2016-06-21 Tue 19:31]" \\
 Private stuff rescheduled for Sundays
 :END:
 
@@ -22,16 +22,16 @@ Collection of ideas
 - [ ] Function: Archiving to different files
 
 ** NEXT Repeating task A
-SCHEDULED: <2016-06-16 Do +1w>
+SCHEDULED: <2016-06-16 Thu +1w>
 :PROPERTIES:
-:LAST_REPEAT: [2016-06-23 Do 21:14]
+:LAST_REPEAT: [2016-06-23 Thu 21:14]
 :END:
 :LOGBOOK:
-- State "DONE"  from "NEXT" [2016-06-23 Do 20:14]
+- State "DONE"  from "NEXT" [2016-06-23 Thu 20:14]
 :END:
 
 ** NEXT Repeating task B
-SCHEDULED: <2016-06-02 Do +1w>
+SCHEDULED: <2016-06-02 Thu +1w>
 :PROPERTIES:
 :LOGGING: nil
 :END:

@@ -114,13 +114,13 @@ parsedSamples =
     , mkEbnfSample' refresh (c 5 'e') (ep 1 4) (s "repeating") (f "task repeating")
     , mkEbnfSample' noRefresh (c 5 'f') (ep 1 5) (s "checklists") (f "checklists")
     , mkEbnfSample' noRefresh (c 5 'g') (ep 2 1) (s "tags") (f "tags")
-    , mkEbnfSample' refresh (c 5 'h') (ep 2 4) (s "drawers-logging") (f "logging in drawers") -- fails
-    -- , mkEbnfSample' refresh (c 5 'i') (ep' 3 4 'a') (s "properties-drawer") (f "properties drawer") -- fails
+    , mkEbnfSample' noRefresh (c 5 'h') (ep 2 4) (s "drawers-logging") (f "logging in drawers") -- fails
+    , mkEbnfSample' noRefresh (c 5 'i') (ep' 3 4 'a') (s "properties-drawer") (f "properties drawer")
     -- , mkEbnfSample' noRefresh (c 5 'j') (ep' 3 4 'b') (s "template") (f "template") -- fails (and it's ok)
     , mkEbnfSample' noRefresh (c 5 'k') (ep 4 1) (s "ordered-tasks") (f "ordered tasks")
     , mkEbnfSample' noRefresh (c 5 'l') (ep 4 2) (s "timers") (f "timers")
     , mkEbnfSample' noRefresh (c 5 'm') (ep 5 4) (s "priorities") (f "priorities")
-    -- , mkEbnfSample (c 6 'a') (s "properties-and-drawers") (f "properties and drawers") -- fails
+    , mkEbnfSample noRefresh (c 6 'a') (s "properties-and-drawers") (f "properties and drawers") -- fails
     ]
 
     where
@@ -135,10 +135,10 @@ parsedSamples =
 samples :: Array Sample
 samples =
     -- [ mkEbnfSample' refresh
-    --     (Category 5 $ Just 'e')
-    --     (Episode { season : 1, episode : 4, mbChar : Nothing })
-    --     (Slug "repeating")
-    --     (Friendly "task repeating") ]
+    --     (Category 5 $ Just 'h')
+    --     (Episode { season : 2, episode : 4, mbChar : Nothing })
+    --     (Slug "drawers-logging")
+    --     (Friendly "logging in drawers") ]
     pursifiedSamples <> parsedSamples
 
 

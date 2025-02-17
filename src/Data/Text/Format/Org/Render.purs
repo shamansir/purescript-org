@@ -530,10 +530,16 @@ layoutDrawer' ro is deep name content =
 
 
 layoutLogBookEntry :: Org.LogBookEntry -> Doc
-layoutLogBookEntry (Org.LogBookEntry { text, mbTimestamp }) =
-    D.mark "-" $ D.join (layoutWords <$> text) <+> case mbTimestamp of
+layoutLogBookEntry (Org.LogBookEntry { text, mbTimestamp, continuation }) =
+    D.mark "-" $ D.join (layoutWords <$> text)
+    <+> case mbTimestamp of
         Just timestamp -> layoutDateTime timestamp
         Nothing -> D.nil
+    <> mbContPostfix
+    <>  if Array.length continuation > 0 then
+            D.join (D.join <$> map layoutWords <$> continuation)
+        else D.nil
+    where mbContPostfix = if Array.length continuation > 0 then D.text " \\\\" else D.nil
 
 
 layoutTable :: Array Org.TableRow -> Doc

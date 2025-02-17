@@ -10,7 +10,7 @@ import Data.Foldable (class Foldable)
 import Data.Unfoldable (class Unfoldable)
 import Data.Tuple.Nested ((/\), type (/\))
 import Data.Array ((:))
-import Data.Array (toUnfoldable, length, mapWithIndex, singleton, delete, foldl, foldr, snoc, intersperse, last) as Array
+import Data.Array (toUnfoldable, length, mapWithIndex, singleton, delete, foldl, foldr, snoc, intersperse, last, modifyAt) as Array
 import Data.Array.NonEmpty (NonEmptyArray)
 import Data.Array.NonEmpty as NEA
 import Data.String (Pattern(..))
@@ -478,6 +478,16 @@ itime = ?wh
 -}
 
 
+logbook_cont :: Array Words -> LogBook -> LogBook
+logbook_cont contWords (LogBook items) =
+    LogBook $ fromMaybe items $ Array.modifyAt (Array.length items - 1) (logbook_item_cont contWords) items
+
+
+logbook_item_cont :: Array Words -> LogBookEntry -> LogBookEntry
+logbook_item_cont contWords (LogBookEntry { text, mbTimestamp, continuation }) =
+    LogBookEntry { text, mbTimestamp, continuation : Array.snoc continuation contWords }
+
+
 -- | Create time from hours and minutes (exactly in this order) numbers with fallback to `bottom` of `Enum` for every invalid integer not in range
 t :: Int -> Int -> T.Time
 t h m = T.Time
@@ -806,7 +816,7 @@ sec_append_drawer drawer = __qset $ \sec -> sec { drawers = Array.snoc sec.drawe
 
 
 note :: Array Words -> OrgDateTime -> LogBookEntry
-note text tstamp = LogBookEntry { text, mbTimestamp : Just tstamp }
+note text tstamp = LogBookEntry { text, mbTimestamp : Just tstamp, continuation : [] }
 
 
 comment :: Section -> Section
