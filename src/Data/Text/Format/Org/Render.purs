@@ -420,7 +420,7 @@ layoutItems ro parentSubj deep (Org.ListItems lt items) = layoutItemsWith ro par
 
 
 layoutItemsWith :: RO -> IndentSubject -> Deep -> Org.ListType -> NonEmptyArray Org.Item -> Doc
-layoutItemsWith ro parentSubj deep lt items  =
+layoutItemsWith ro parentSubj (Deep deep) lt items  =
     let
         markerPrefix idx = case lt of
             Org.Bulleted -> "*"
@@ -469,15 +469,16 @@ layoutItemsWith ro parentSubj deep lt items  =
             Array.length opts.drawers > 0
         drawers idx opts =
             opts.drawers
-                # map (layoutDrawer ro (indentSubjFor idx) deep)
+                # map (layoutDrawer ro (indentSubjFor idx) $ Deep deep)
                 # D.joinWith D.break
-        -- indent = ro.calcIndent subj
-            -- case parentSubj of
-            --     Just subj -> ro.calcIndent subj
-            --     Nothing -> ro.calcIndent $ Items deep
+        indent = deep
+        -- indent = ro.calcIndent parentSubj
+        --     case parentSubj of
+        --         Just subj -> ro.calcIndent subj
+        --         Nothing -> ro.calcIndent $ Items deep
     in
-        D.stack $ NEA.toArray $ NEA.mapWithIndex itemMaybeWithDrawers items
-        -- D.nest' indent $ NEA.toArray $ NEA.mapWithIndex itemMaybeWithDrawers items
+        -- D.stack $ NEA.toArray $ NEA.mapWithIndex itemMaybeWithDrawers items
+        D.nest' indent $ NEA.toArray $ NEA.mapWithIndex itemMaybeWithDrawers items
 
 
 layoutProperty :: Prop.JsonPropertyRec String -> Doc
