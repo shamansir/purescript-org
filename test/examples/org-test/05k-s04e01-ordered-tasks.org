@@ -5,6 +5,7 @@
 * Examples
 ** PROJ Orgmode Tutorial Episode 04
 :PROPERTIES:
+:SOMEPROP: VAL
 :END:
 *** DONE Brainstorming for the topics
 *** PROJ SO1: Ordered Tasks
@@ -18,6 +19,7 @@
 **** TODO Upload to YouTube
 *** PROJ S02: Timers
 :PROPERTIES:
+:SOMEPROP: VAL
 :END:
 - Countdown timer eg. for Brainstorming
 - Life timer for taking notes with a relative timestamp

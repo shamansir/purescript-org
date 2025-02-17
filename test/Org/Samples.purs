@@ -38,6 +38,7 @@ import Org.Test.Test04f as Test04f
 import Org.Test.Test04g as Test04g
 import Org.Test.Test04h as Test04h
 import Org.Test.Test04i as Test04i
+import Org.Test.Test06a as Test06a
 
 
 -- TODO: use Test.Spec.Util.Assertions from `noodle` or `purescript-text-formatting`
@@ -89,6 +90,9 @@ pursifiedSamples =
     , mkPursSample Test04g.test (c 4 'g') (s "formatting-dates")     $ f "formatting: dates"
     , mkPursSample Test04h.test (c 4 'h') (s "formatting-properties-and-keywords") $ f "formatting: properties & keywords"
     , mkPursSample Test04i.test (c 4 'i') (s "formatting-drawers")   $ f "formatting: drawers"
+    , mkPursSample Test04i.test (c 4 'i') (s "formatting-drawers")   $ f "formatting: drawers"
+
+    , mkPursSample Test06a.test (c 6 'a') (s "properties-and-drawers") $ f "properties and drawers"
     ]
 
     where
@@ -101,9 +105,22 @@ pursifiedSamples =
 parsedSamples :: Array Sample
 parsedSamples =
 
+    -- From OrgMode tutorial by Rainer König: https://youtube.com/playlist?list=PLVtKhBrRV_ZkPnBtt_TD1Cs9PJlU0IIdE&si=Uo4uuf4-RM0ImLjK
+
     [ mkEbnfSample' (c 5 'a') (ep 1 1) (s "headlines") (f "headlines : expanded")
     , mkEbnfSample' (c 5 'b') (ep' 1 2 'a') (s "todo-keywords.v1") (f "TODO keywords. v1")
     , mkEbnfSample' (c 5 'c') (ep' 1 2 'b') (s "todo-keywords.v2") (f "TODO keywords. v2")
+    , mkEbnfSample' (c 5 'd') (ep' 1 3 'a') (s "schedule") (f "types of schedules") -- fails
+    , mkEbnfSample' (c 5 'e') (ep 1 4) (s "repeating") (f "task repeating") -- fails
+    , mkEbnfSample' (c 5 'f') (ep 1 5) (s "checklists") (f "checklists") -- fails
+    , mkEbnfSample' (c 5 'g') (ep 2 1) (s "tags") (f "tags") -- fails
+    , mkEbnfSample' (c 5 'h') (ep 2 4) (s "drawers-logging") (f "logging in drawers") -- fails
+    , mkEbnfSample' (c 5 'i') (ep' 3 4 'a') (s "properties-drawer") (f "properties drawer") -- fails
+    , mkEbnfSample' (c 5 'j') (ep' 3 4 'b') (s "template") (f "template") -- fails
+    , mkEbnfSample' (c 5 'k') (ep 4 1) (s "ordered-tasks") (f "ordered tasks") -- fails
+    , mkEbnfSample' (c 5 'l') (ep 4 2) (s "timers") (f "timers") -- fails
+    , mkEbnfSample' (c 5 'm') (ep 5 4) (s "priorities") (f "priorities") -- fails
+    -- , mkEbnfSample (c 6 'a') (s "properties-and-drawers") (f "properties and drawers") -- fails
     ]
 
     where

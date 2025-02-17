@@ -2,30 +2,30 @@
 
 * GTD related things
 ** NEXT Weekly Review
-SCHEDULED: <2016-06-10 Fr>
+SCHEDULED: <2016-06-10 Fri>
 
 * Legal obligations
 ** NEXT Prepare tax declaration
-DEADLINE: <2016-06-24 Fr> SCHEDULED: <2016-06-13 Mo>
+DEADLINE: <2016-06-24 Fri> SCHEDULED: <2016-06-13 Mon>
 - Collect all documents for your tax lawyer
 ** TODO Call the tax lawyer after the document were sent
 
 * Maitenance
 ** NEXT Wash the car
-SCHEDULED: <2016-06-21 Sa>
+SCHEDULED: <2016-06-21 Tue>
 - Washing from outside and vacuum cleaning the inside
 ** PROJ Repair bycicle
 *** WAITING Delivery of spare part (chain)
-SCHEDULED: <2016-06-14 Di>
+SCHEDULED: <2016-06-14 Tue>
 I have chain ordered, needs to be delivered
 *** TODO Mount chain
 You probably need to re adjust the gear shifting
 
 * Family business
 ** NEXT Get a birthday gift for wife
-SCHEDULED: <2016-06-11 Sa> DEADLINE: <2016-06-25 Sa>
+DEADLINE: <2016-06-25 Sat> SCHEDULED: <2016-06-11 Sat>
 ** NEXT Watch concert of your kid in school
-SCHEDULED: <2016-06-15 Mi 16:00-17:00>
+SCHEDULED: <2016-06-15 Wed 16:00-17:00>
 - Don't miss that, otherwise kid is dissapointed
 
 * House stuff
