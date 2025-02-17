@@ -33,7 +33,7 @@ spec = do
 
     U.helper
         { title : const _.friendly
-        , spec : \{ slug, file } -> qtest slug R.defaultRO file
+        , spec : \{ slug, file } -> liftEffect file >>= qtest slug R.defaultRO
         }
         $ samples
 

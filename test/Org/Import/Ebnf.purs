@@ -21,7 +21,7 @@ import Test.Utils as U
 import Test.Org.Samples (samples)
 
 import Yoga.JSON (readJSON, E)
-import Data.Text.Format.Org.Ebnf (FromEbnf(..))
+import Data.Text.Format.Org.Parse.Ebnf (FromEbnf(..))
 
 
 spec :: Spec Unit

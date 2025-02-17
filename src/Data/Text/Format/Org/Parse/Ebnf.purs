@@ -1,7 +1,8 @@
-module Data.Text.Format.Org.Ebnf where
+module Data.Text.Format.Org.Parse.Ebnf where
 
 import Prelude
 
+import Effect (Effect)
 import Data.Maybe (Maybe(..), maybe, fromMaybe)
 import Data.String (Pattern(..))
 import Data.String (joinWith, length, split, uncons, codePointFromChar, drop, toLower, trim, stripSuffix) as String
@@ -539,3 +540,12 @@ instance ReadForeign Match where
     readImpl json
         =   (Text    <$> (readImpl json :: F String))
         <|> (Matches <$> (readImpl json :: F (Array Match)))
+
+
+
+newtype EbnfGrammar = EbnfGrammar String
+newtype OrgText = OrgText String
+newtype TestFileSlug = TestFileSlug String
+
+foreign import parseOrgWithEbnf :: EbnfGrammar -> OrgText -> String
+foreign import writeEbnfJsonFor :: TestFileSlug -> Effect Unit

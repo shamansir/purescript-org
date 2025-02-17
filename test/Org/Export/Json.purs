@@ -56,7 +56,7 @@ spec = do
     describe "samples" $
         U.helper
             { title : const _.friendly
-            , spec : \{ file } -> qjsontest file
+            , spec : \{ file } -> liftEffect file >>= qjsontest
             }
             $ samples
 
