@@ -10,18 +10,18 @@ if they are present since their contents are interpreted =_literally_=.
 
 [[https://upload.wikimedia.org/wikipedia/commons/5/5d/Konigsberg_bridges.png]]
 
-#+begin_example
+#+BEGIN_EXAMPLE
 monospace
-#+end_example
+#+END_EXAMPLE
 
-#+begin_src emacs-lisp
+#+BEGIN_SRC emacs-lisp
 (message "Hello world")
-#+end_src
+#+END_SRC
 
-#+begin_quote
+#+BEGIN_QUOTE
 Everything should be made as simple as possible,
 but not any simpler ---Albert Einstein
-#+end_quote
+#+END_QUOTE
 
 -----
 

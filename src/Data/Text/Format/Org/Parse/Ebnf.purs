@@ -184,6 +184,14 @@ extractFromRoot =
                         _ -> orgf -- should not happen
                 , target : TopLevel
                 }
+            Rule "affiliated-keyword-line" [ TextRule "affil-kw-key" kwTitle, TextRule "kw-value" kwValue ] ->
+                { orgf
+                , target :
+                    case target of
+                        GoesTo { hasLines } (K kws) ->
+                            GoesTo { hasLines } $ K $ KW.snoc kws $ KW.kw kwTitle kwValue
+                        _ -> GoesTo { hasLines : false } $ K $ KW.snoc KW.empty $ KW.kw kwTitle kwValue
+                }
             Rule "other-keyword-line" [ TextRule "kw-name" kwTitle, TextRule "kw-value" kwValue ] ->
                 { orgf
                 , target :
@@ -562,6 +570,8 @@ extractFromRoot =
                     Just $ Org.subs textVal
                 Rule "text-sup" [ TextRule "text-subsup-word" textVal ] ->
                     Just $ Org.sups textVal
+                Rule "text-link" [ Rule "text-link-plain" linkRules ] ->
+                    Just $ Org.ref (createLinkTarget linkRules)
                 Rule "link-format" [ Rule "link" linkRules, TextRule "link-description" linkDescr ] ->
                     Just $ Org.to (createLinkTarget linkRules) linkDescr
                 Rule "link-format" [ Rule "link" linkRules ] ->
@@ -583,6 +593,7 @@ extractFromRoot =
                 [ Rule "link-int" [ TextRule "link-file-loc-string" headingStr ] ] -> Org.head headingStr
                 [ Rule "link-ext" [ TextRule "link-ext-file" fileLoc ] ] -> Org.loc fileLoc
                 [ Rule "link-ext" [ Rule "link-ext-other" [ TextRule "link-url-scheme" linkScheme, TextRule "link-url-rest" linkRest ] ] ] -> Org.rem $ linkScheme <> ":" <> linkRest
+                [ TextRule "link-url-scheme" linkScheme, TextRule "text-link-plain-path" linkRest ] -> Org.rem $ linkScheme <> ":" <> linkRest
                 _ -> Org.rem "LINK"
 
         wordsFromRules wordsRules = Array.catMaybes $ toWordsFromRule <$> wordsRules

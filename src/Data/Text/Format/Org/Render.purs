@@ -94,10 +94,10 @@ layoutBlock ro deep = case _ of
         case blockNameAndArgs conf of
             nameDoc /\ mbArgsDoc ->
                 let
-                    firstLine = D.text "#+begin_" <> nameDoc <> case mbArgsDoc of
+                    firstLine = D.text "#+BEGIN_" <> nameDoc <> case mbArgsDoc of
                         Just argsDoc -> D.space <> argsDoc
                         Nothing -> D.nil
-                    endLine = D.text "#+end_" <> nameDoc
+                    endLine = D.text "#+END_" <> nameDoc
                 in D.indentBy indent firstLine
                     </> D.nest' indent (words # NEA.toArray # _splitByBreak)
                     </> D.indentBy indent endLine
@@ -157,13 +157,13 @@ layoutBlock ro deep = case _ of
     where
 
         blockNameAndArgs = case _ of
-            Org.Quote -> D.text "quote" /\ Nothing
-            Org.Example -> D.text "example" /\ Nothing
-            Org.Center -> D.text "center" /\ Nothing
-            Org.Verse -> D.text "verse" /\ Nothing
-            Org.Export -> D.text "export" /\ Nothing
-            Org.Comment -> D.text "comment" /\ Nothing
-            Org.Code mbLang -> D.text "src" /\ (case mbLang of
+            Org.Quote -> D.text "QUOTE" /\ Nothing
+            Org.Example -> D.text "EXAMPLE" /\ Nothing
+            Org.Center -> D.text "CENTER" /\ Nothing
+            Org.Verse -> D.text "VERSE" /\ Nothing
+            Org.Export -> D.text "EXPORT" /\ Nothing
+            Org.Comment -> D.text "COMMENT" /\ Nothing
+            Org.Code mbLang -> D.text "SRC" /\ (case mbLang of
                     Just (Org.Language lang) -> Just $ D.text lang
                     Nothing -> Nothing)
             Org.Custom name args ->

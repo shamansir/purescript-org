@@ -1,4 +1,5 @@
 * _*&ndOrg;*_
+** TODO Fix the issues with indenting inner lists, maybe =ListItem= / =DetachedListItem= should just contain indentation amount (it does, but it is not applied on rendering somehow)
 ** TODO Fix ordering of planning timestamps, in =org= they are sorted by their time
 ** TODO Support Drawers that contain =Block= (or many Blocks), because drawers can contain anything (multiline drawers break now)
 ** TODO Support macro and `equations and LaTeX

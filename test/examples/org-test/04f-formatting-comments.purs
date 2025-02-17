@@ -21,9 +21,9 @@ test =
             [ "This is a block comment."
             , "It can span multiple line."
             , "As well as other markup."
-            , "#+begin_src emacs-lisp"
+            , "#+BEGIN_SRC emacs-lisp"
             , "(+ 1 2)"
-            , "#+end_src"
+            , "#+END_SRC"
             ]
         , Org.blank
         ]
@@ -41,7 +41,7 @@ test =
                     , Org.bcomment -- FIXME: first line should not be indented
                         [ "A comment is taken verbatim, with this text not parsed recursively and"
                         , "considered a part of the comment block element itself."
-                        , "=#+begin_comment= is BEGIN, =#+end_comment= - END, and VALUE is this"
+                        , "=#+BEGIN_COMMENT= is BEGIN, =#+END_COMMENT= - END, and VALUE is this"
                         , "text."
                         ]
                     ]
