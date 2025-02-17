@@ -280,7 +280,7 @@ idrawer name content (Item rec iws inner) =
     Item
         (rec
             { drawers =
-                Array.snoc rec.drawers $ Drawer { name, content : __neafws content }
+                Array.snoc rec.drawers $ Drawer { name, content : __neafws content, logbook : [] }
             }
         )
         iws
@@ -749,13 +749,18 @@ mk_drawer name = mk_drawer' name <<< __neafws
 
 
 mk_drawer' :: String -> NonEmptyArray Words -> Drawer
-mk_drawer' name content = Drawer { name, content }
+mk_drawer' name content = Drawer { name, content, logbook : [] }
 
 
 
 -- | Add words to the drawer
-drawer_add ::  Array Words  -> Drawer -> Drawer
-drawer_add nextContent (Drawer { name, content }) = Drawer { name, content : NEA.appendArray content nextContent }
+drawer_add :: Array Words -> Drawer -> Drawer
+drawer_add nextContent (Drawer { name, content, logbook }) = Drawer { name, content : NEA.appendArray content nextContent, logbook }
+
+
+drawer_add_log :: LogBookEntry -> Drawer -> Drawer
+drawer_add_log logItem (Drawer { name, content, logbook }) = Drawer { name, content, logbook : Array.snoc logbook logItem }
+
 
 {-
 wlast_drawer :: (Drawer -> Drawer) -> Section -> Section
@@ -776,8 +781,9 @@ sec_append_drawer :: Drawer -> Section -> Section
 sec_append_drawer drawer = __qset $ \sec -> sec { drawers = Array.snoc sec.drawers drawer } -- FIXME
 
 
-note :: String -> Section -> Section
-note _ = identity  -- FIXME -- LOGBOOK
+
+note :: String -> OrgDateTime -> LogBookEntry
+note text tstamp = LogBookEntry { text, mbTimestamp : Just tstamp }
 
 
 comment :: Section -> Section
@@ -1066,8 +1072,8 @@ append_bl_sec = sec_wdoc <<< snoc_bl
 inject_words :: Array Words -> Block -> Block
 inject_words words = case _ of
     Of kind curWords -> Of kind $ NEA.appendArray curWords words
-    IsDrawer (Drawer { name, content }) ->
-        IsDrawer $ Drawer { name, content : NEA.appendArray content words }
+    IsDrawer (Drawer { name, content, logbook }) ->
+        IsDrawer $ Drawer { name, content : NEA.appendArray content words, logbook }
     Footnote name curWords -> Footnote name $ NEA.appendArray curWords words
     List list -> List list
     DetachedItem (DetachedListItem def indent props curWords) ->

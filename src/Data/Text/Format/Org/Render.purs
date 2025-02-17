@@ -11,7 +11,7 @@ import Data.Enum (fromEnum)
 import Data.Maybe (Maybe(..), maybe, fromMaybe, isJust)
 import Data.Either (Either(..), either)
 import Data.Newtype (unwrap)
-import Data.String (toUpper, toLower, take, length) as String
+import Data.String (toUpper, toLower, take, length, trim) as String
 import Data.String.CodeUnits (singleton) as String
 import Data.Time (Time, hour, minute) as DT
 import Data.Tuple.Nested ((/\))
@@ -231,7 +231,7 @@ layoutSection ro (Org.Section section) =
                 # Prop.toJson
                 # unwrap
                 # map layoutProperty
-                # layoutDrawer' ro (Section deep) deep DrawerUpper "properties"
+                # layoutDrawer' ro (Section deep) deep DrawerUpper "properties" []
         hasOtherDrawers =
             Array.length section.drawers > 0
         otherDrawers =
@@ -489,17 +489,18 @@ layoutKeyword kwd =
 
 
 layoutDrawer :: RO -> IndentSubject -> Deep -> Org.Drawer -> Doc
-layoutDrawer ro is deep (Org.Drawer { name, content }) =
+layoutDrawer ro is deep (Org.Drawer { name, content, logbook }) =
     content
         # NEA.toArray
         # _splitByBreak
-        # layoutDrawer' ro is deep DrawerLower name
+        # layoutDrawer' ro is deep DrawerLower name logbook
 
 
-layoutDrawer' :: RO -> IndentSubject -> Deep -> DrawerMode -> String -> Array Doc -> Doc
-layoutDrawer' ro is deep mode name content =
+layoutDrawer' :: RO -> IndentSubject -> Deep -> DrawerMode -> String -> Array Org.LogBookEntry -> Array Doc -> Doc
+layoutDrawer' ro is deep mode name logbook content =
     D.indentBy indent (D.wrap ":" $ D.text $ applyMode name)
     </> D.nest' indent content
+    <> (if Array.length logbook > 0 then D.indentBy indent (D.joinWith D.break $ layoutLogBookEntry <$> logbook) else D.nil)
     </> D.indentBy indent (D.wrap ":" $ D.text $ applyMode "end")
     where
         indent = ro.calcIndent $ Drawer is deep
@@ -507,6 +508,13 @@ layoutDrawer' ro is deep mode name content =
             case mode of
                 DrawerUpper -> String.toUpper
                 DrawerLower -> String.toLower
+
+
+layoutLogBookEntry :: Org.LogBookEntry -> Doc
+layoutLogBookEntry (Org.LogBookEntry { text, mbTimestamp }) =
+    D.mark "-" $ D.text (String.trim text) <+> case mbTimestamp of
+        Just timestamp -> layoutDateTime timestamp
+        Nothing -> D.nil
 
 
 layoutTable :: Array Org.TableRow -> Doc

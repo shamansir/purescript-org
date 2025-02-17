@@ -2,10 +2,12 @@ module Data.Text.Format.Org.Parse.Ebnf where
 
 import Prelude
 
+import Debug as Debug
+
 import Effect (Effect)
 import Data.Maybe (Maybe(..), maybe, fromMaybe)
 import Data.String (Pattern(..))
-import Data.String (joinWith, length, split, uncons, codePointFromChar, drop, toLower, trim, stripSuffix) as String
+import Data.String (joinWith, length, split, uncons, codePointFromChar, drop, toLower, trim, stripPrefix, stripSuffix, indexOf, splitAt) as String
 import Data.String.CodePoints as SCP
 import Data.String.CodeUnits as SCU
 import Data.Int (fromString) as Int
@@ -14,6 +16,8 @@ import Data.Text.Format.Org.Types as Org
 import Data.Text.Format.Org.Construct as Org
 import Data.Text.Format.Org.Keyword as KW
 import Data.Text.Format.Org.Property as Prop
+import Data.Text.Format.Org.Render as Render
+import Data.Text.Doc (render, Break(..), Indent(..)) as Doc
 import Data.Foldable (foldl)
 import Data.Array ((:))
 import Data.Array (head, catMaybes, uncons, singleton) as Array
@@ -128,6 +132,7 @@ extractFromRoot =
                         TopLevel -> target
                         GoesTo { hasLines } subject ->
                             let
+                                errorProp = Prop.prop "ERR" "ERR_VAL"
                                 wordsToAdd = wordsFromRules $ _extractWordsRules contentRules
                                 wordsToAdd' = if hasLines then Org.br : wordsToAdd else wordsToAdd -- a kind of hack to add breaks to the contents of the blocks
                             in
@@ -137,7 +142,7 @@ extractFromRoot =
                                 D drawer ->
                                     GoesTo { hasLines : true } $ D $ Org.drawer_add wordsToAdd' drawer
                                 P props ->
-                                    GoesTo { hasLines : true } $ P $ Prop.snoc props $ _extractProp $ String.joinWith "" $ collectTextOnly <$> _extractWordsRules contentRules
+                                    GoesTo { hasLines : true } $ P $ Prop.snoc props $ fromMaybe errorProp $ _extractProp $ String.joinWith "" $ collectTextOnly <$> _extractWordsRules contentRules
                                 K kws ->
                                     TopLevel -- we reset the level and apply them above
                 }
@@ -190,9 +195,31 @@ extractFromRoot =
                 , target
                 }
             Rule "list-item-line" liRules ->
-                { orgf : orgf # Org.append_bl (Org.det_item $ foldl applyListItemRule Org.emptyDetItem liRules)
-                , target
-                }
+                let
+                    detListItem = foldl applyListItemRule Org.emptyDetItem liRules
+                    mbLogbookEntry = case liRules of
+                        [ _ {- indent -}
+                        , _ {- list-item-bullet -}
+                        , Rule "text" [ TextRule "text-normal" textContent, Rule "timestamp" tsRules ]
+                        ] -> Just $ Org.LogBookEntry { text : textContent, mbTimestamp : Just $ buildTimeStamp tsRules }
+                        _ -> Nothing
+                in case target of
+                    GoesTo { hasLines } (D drawer@(Org.Drawer { name })) ->
+                        if String.toLower name == "logbook"
+                            then
+                                { orgf
+                                , target : case mbLogbookEntry of
+                                    Just logBookEntry -> GoesTo { hasLines } $ D $ Org.drawer_add_log logBookEntry drawer
+                                    Nothing -> target -- TODO: ?
+                                }
+                            else
+                                { orgf : orgf # Org.append_bl (Org.det_item detListItem)
+                                , target
+                                }
+                    _ ->
+                        { orgf : orgf # Org.append_bl (Org.det_item detListItem)
+                        , target
+                        }
             Rule "footnote-line" [ TextRule "fn-label" fnLabel, Rule "text" wordsRules ] ->
                 { orgf : orgf # Org.append_bl (Org.fn_ fnLabel $ wordsFromRules wordsRules)
                 , target
@@ -204,7 +231,7 @@ extractFromRoot =
             Rule "drawer-begin-line" [ TextRule "drawer-name" drawerName ] ->
                 let
                      -- although rule is named `drawer-begin-line`, drawer end comes from parser this way
-                    isDrawerEnd = String.toLower drawerName == "end"
+                    isDrawerEnd  = String.toLower drawerName == "end"
                     isProperties = String.toLower drawerName == "properties"
                 in
                     { orgf : if isDrawerEnd then _finishDrawer orgf target else orgf
@@ -282,7 +309,6 @@ extractFromRoot =
                                 ]
                                 block
                 GoesTo _ _ -> target
-                _ -> TopLevel
 
         _finishDrawer orgf target =
             case target of
@@ -322,22 +348,26 @@ extractFromRoot =
             " " -> Org.Uncheck
             _ -> Org.Uncheck
 
-        _extractProp propText =
-            case String.split (Pattern ":") propText of
-                [ _, nameStr, valStr ] ->
-                    let trimmedValStr = String.trim valStr
-                    in case String.stripSuffix (Pattern "+") nameStr of
-                        Just nameWithoutSuffix ->
-                            if String.length trimmedValStr > 0 then
-                                Prop.propapp nameWithoutSuffix trimmedValStr
-                            else
-                                Prop.propappn nameWithoutSuffix
-                        Nothing ->
-                            if String.length trimmedValStr > 0 then
-                                Prop.prop nameStr trimmedValStr
-                            else
-                                Prop.propn nameStr
-                _ -> Prop.prop "ERR" "ERR_VAL" -- FIXME: return `Maybe`
+        _extractProp :: String -> Maybe (Prop.OrgProperty String)
+        _extractProp propText = do
+            restText <- String.stripPrefix (Pattern ":") propText
+            firstColonIndex <- String.indexOf (Pattern ":") restText
+            let
+                { before, after } = String.splitAt firstColonIndex restText
+                nameStr = String.trim before
+                valStr = String.trim $ String.drop 1 after
+                mbNameWithoutSuffix = String.stripSuffix (Pattern "+") nameStr
+            pure $ case mbNameWithoutSuffix of
+                Just nameWithoutSuffix ->
+                    if String.length valStr > 0 then
+                        Prop.propapp nameWithoutSuffix valStr
+                    else
+                        Prop.propappn nameWithoutSuffix
+                Nothing ->
+                    if String.length valStr > 0 then
+                        Prop.prop nameStr valStr
+                    else
+                        Prop.propn nameStr
 
         applyListItemRule litem =
             case _ of
@@ -462,7 +492,12 @@ extractFromRoot =
                     "_" <> textVal
                 Rule "text-sup" [ TextRule "text-subsup-word" textVal ] ->
                     "^" <> textVal
+                Rule "timestamp" tsRules ->
+                    renderPlain $ Render.layoutDateTime $ buildTimeStamp tsRules
                 _ -> ""
+
+        renderPlain =
+            Doc.render { break : Doc.None, indent : Doc.Empty }
 
         toWordsFromRule =
             case _ of

@@ -185,10 +185,18 @@ data DelayMode
     | All
 
 
+newtype LogBookEntry
+    = LogBookEntry
+        { text :: String
+        , mbTimestamp :: Maybe OrgDateTime
+        }
+
+
 newtype Drawer =
     Drawer
         { name :: String
         , content :: NonEmptyArray Words
+        , logbook :: Array LogBookEntry -- should be only in LogBook drawer
         }
 
 
@@ -333,6 +341,7 @@ derive instance Newtype Delay _
 derive instance Newtype Planning _
 derive instance Newtype Clock _
 derive instance Newtype Diary _
+derive instance Newtype LogBookEntry _
 
 -- internals below, they don't need Newtype instance
 
@@ -705,7 +714,7 @@ instance JsonOverVariant BlockKindRow BlockKind where
 
 type BlockRow =
     ( kind :: Case2 BlockKind (Array Words)
-    , drawer :: Case2 String (Array Words)
+    , drawer :: Case3 String (Array Words) (Array (Record LogBookEntryRow))
     , paragraph :: Case1 (Array Words)
     , footnote :: Case2 String (Array Words)
     , hr :: Case
@@ -764,7 +773,7 @@ readBlock =
     readMatchImpl
         (Proxy :: _ BlockRow)
         { kind : Variant.use2 $ \kind ws -> Of kind $ importWords ws
-        , drawer : Variant.use2 $ \name ws -> IsDrawer $ Drawer { name, content : importWords ws }
+        , drawer : Variant.use3 $ \name ws logbook -> IsDrawer $ Drawer { name, content : importWords ws, logbook : load <$> logbook }
         , footnote : Variant.use2 $ \label ws -> Footnote label $ importWords ws
         , paragraph : Variant.use1 $ Paragraph <<< importWords
         , hr : Variant.use HRule
@@ -783,7 +792,7 @@ blockToVariant :: Block -> Variant BlockRow
 blockToVariant = case _ of
     Of kind words -> Variant.select2 (Proxy :: _ "kind") kind $ exportWords words
     Paragraph words -> Variant.select1 (Proxy :: _ "paragraph") $ exportWords words
-    IsDrawer (Drawer { name, content }) -> Variant.select2 (Proxy :: _ "drawer") name $ exportWords content
+    IsDrawer (Drawer { name, content, logbook }) -> Variant.select3 (Proxy :: _ "drawer") name (exportWords content) $ convert <$> logbook
     Footnote label words -> Variant.select2 (Proxy :: _ "footnote") label $ exportWords words
     HRule -> Variant.select (Proxy :: _ "hr")
     FixedWidth words -> Variant.select1 (Proxy :: _ "fixed") $ exportWords words
@@ -808,7 +817,7 @@ blockFromVariant =
         , hr : Variant.uncase HRule
         , fixed : Variant.uncase1 >>> importWords >>> FixedWidth
         , paragraph : Variant.uncase1 >>> importWords >>> Paragraph
-        , drawer : Variant.uncase2 >>> map importWords >>> Tuple.uncurry \name content -> IsDrawer $ Drawer { name, content }
+        , drawer : Variant.uncase3 >>> \( name /\ content /\ logbook ) -> IsDrawer $ Drawer { name, content : importWords content, logbook : load <$> logbook }
         , footnote : Variant.uncase2 >>> map importWords >>> Tuple.uncurry Footnote
         , comment : Variant.uncase1 >>> LComment
         , list : Variant.uncase2 >>> Tuple.uncurry \ltype items -> List $ ListItems (fromVariant ltype) $ importItems items
@@ -1620,6 +1629,19 @@ instance JsonOverRow PlanningRow Planning where
 
 -- convertDoc :: OrgDoc -> Record DocRow
 -- convertOrgFile :: OrgFile -> Record FileRow
+
+
+type LogBookEntryRow =
+    ( text :: String
+    , timestamp :: Maybe (Record JsonDateTimeRow)
+    )
+
+
+instance ReadForeign LogBookEntry where readImpl = readImplRow
+instance WriteForeign LogBookEntry where writeImpl = writeImplRow
+instance JsonOverRow LogBookEntryRow LogBookEntry where
+    convert = unwrap >>> \{ text, mbTimestamp } -> { text, timestamp : convert <$> mbTimestamp }
+    load { text, timestamp } = wrap { text, mbTimestamp : load <$> timestamp }
 
 
 type DocRow =
