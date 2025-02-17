@@ -142,8 +142,17 @@ extractFromRoot =
                                     TopLevel -- we reset the level and apply them above
                 }
             Rule "empty-line" [] ->
-                { orgf : orgf # Org.append_bl Org.blank
-                , target
+                { orgf :
+                    case target of
+                        GoesTo _ (K _) -> appyRemainings { orgf, target }
+                        GoesTo _ (P _) -> appyRemainings { orgf, target }
+                        -- drawer should fall back as well?
+                        _ -> orgf # Org.append_bl Org.blank
+                , target : case target of
+                    GoesTo _ (K _) -> TopLevel
+                    GoesTo _ (P _) -> TopLevel
+                    -- drawer should fall back as well?
+                    _ -> target
                 }
             TextRule "horizontal-rule" _ ->
                 { orgf : orgf # Org.append_bl Org.hr
