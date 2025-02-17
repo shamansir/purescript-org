@@ -30,7 +30,7 @@ test =
             , Org.sec1 2 (Org.text "This is a headline")
                 (Org.db
                     [ Org.para1 $ Org.text "Still outside the drawer"
-                    , Org.bdrawer1 "DRAWERNAME" $ Org.text "This is inside the drawer."
+                    , Org.bdrawer1 "drawername" $ Org.text "This is inside the drawer."
                     , Org.para1 $ Org.text "After the drawer."
                     , Org.blank
                     ]

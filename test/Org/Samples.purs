@@ -111,10 +111,10 @@ parsedSamples =
     , mkEbnfSample' noRefresh (c 5 'b') (ep' 1 2 'a') (s "todo-keywords.v1") (f "TODO keywords. v1")
     , mkEbnfSample' noRefresh (c 5 'c') (ep' 1 2 'b') (s "todo-keywords.v2") (f "TODO keywords. v2")
     , mkEbnfSample' noRefresh (c 5 'd') (ep' 1 3 'a') (s "schedule") (f "types of schedules")
-    , mkEbnfSample' refresh (c 5 'e') (ep 1 4) (s "repeating") (f "task repeating") -- fails
+    , mkEbnfSample' refresh (c 5 'e') (ep 1 4) (s "repeating") (f "task repeating")
     , mkEbnfSample' noRefresh (c 5 'f') (ep 1 5) (s "checklists") (f "checklists")
     , mkEbnfSample' noRefresh (c 5 'g') (ep 2 1) (s "tags") (f "tags")
-    -- , mkEbnfSample' noRefresh (c 5 'h') (ep 2 4) (s "drawers-logging") (f "logging in drawers") -- fails
+    , mkEbnfSample' refresh (c 5 'h') (ep 2 4) (s "drawers-logging") (f "logging in drawers") -- fails
     -- , mkEbnfSample' refresh (c 5 'i') (ep' 3 4 'a') (s "properties-drawer") (f "properties drawer") -- fails
     -- , mkEbnfSample' noRefresh (c 5 'j') (ep' 3 4 'b') (s "template") (f "template") -- fails (and it's ok)
     , mkEbnfSample' noRefresh (c 5 'k') (ep 4 1) (s "ordered-tasks") (f "ordered tasks")

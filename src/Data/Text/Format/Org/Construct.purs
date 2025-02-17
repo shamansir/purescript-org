@@ -186,6 +186,18 @@ bcomment :: Array String -> Block
 bcomment ws = Of Comment $ __neafws $ Array.intersperse Break $ Plain <$> ws
 
 
+verse :: Array Words -> Block
+verse = Of Verse <<< __neafws
+
+
+bcenter :: Array Words -> Block
+bcenter = Of Center <<< __neafws
+
+
+bexport :: Array Words -> Block
+bexport = Of Export <<< __neafws
+
+
 list :: ListType -> Array Item -> Block
 list lt = List <<< __items lt
 

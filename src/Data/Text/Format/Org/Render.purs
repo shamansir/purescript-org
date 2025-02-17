@@ -11,10 +11,11 @@ import Data.Enum (fromEnum)
 import Data.Maybe (Maybe(..), maybe, fromMaybe, isJust)
 import Data.Either (Either(..), either)
 import Data.Newtype (unwrap)
-import Data.String (toUpper, toLower, take, length, trim) as String
+import Data.String (toUpper, toLower, take, length, trim, toCodePointArray) as String
 import Data.String.CodeUnits (singleton) as String
 import Data.Time (Time, hour, minute) as DT
 import Data.Tuple.Nested ((/\))
+import Data.CodePoint.Unicode (isUpper) as UC
 
 import Data.Text.Doc (Doc, (<+>), (</>), (<//>))
 import Data.Text.Doc as D
@@ -34,6 +35,7 @@ newtype Deep = Deep Int
 data DrawerMode
     = DrawerUpper
     | DrawerLower
+    | KeepCase
 
 
 layout :: OrgFile -> Doc
@@ -234,7 +236,7 @@ layoutSection ro (Org.Section section) =
                 # Prop.toJson
                 # unwrap
                 # map layoutProperty
-                # layoutDrawer' ro (Section deep) deep DrawerUpper "properties"
+                # layoutDrawer' ro (Section deep) deep "PROPERTIES"
         hasLogbookEntries =
             section.logbook # maybe false (unwrap >>> Array.length >>> (_ > 0))
         logbookDrawer logbook =
@@ -502,28 +504,29 @@ layoutDrawer ro is deep (Org.Drawer { name, content }) =
     content
         # NEA.toArray
         # _splitByBreak
-        # layoutDrawer' ro is deep DrawerLower name
+        # layoutDrawer' ro is deep name
 
 
 layoutLogBook :: RO -> IndentSubject -> Deep -> Org.LogBook -> Doc
 layoutLogBook ro is deep (Org.LogBook entries) =
     entries
         # map layoutLogBookEntry
-        # layoutDrawer' ro is deep DrawerUpper "LOGBOOK"
+        # layoutDrawer' ro is deep "LOGBOOK"
 
 
-layoutDrawer' :: RO -> IndentSubject -> Deep -> DrawerMode -> String -> Array Doc -> Doc
-layoutDrawer' ro is deep mode name content =
+layoutDrawer' :: RO -> IndentSubject -> Deep -> String -> Array Doc -> Doc
+layoutDrawer' ro is deep name content =
     D.indentBy indent (D.wrap ":" $ D.text $ applyMode name)
     </> D.nest' indent content
-    -- <> (if Array.length logbook > 0 then D.indentBy indent (D.joinWith D.break $ layoutLogBookEntry <$> logbook) else D.nil)
-    </> D.indentBy indent (D.wrap ":" $ D.text $ applyMode "end")
+    </> D.indentBy indent (D.wrap ":" $ D.text $ applyMode endWord)
     where
+        endWord = if Array.all UC.isUpper $ String.toCodePointArray name then "END" else "end"
         indent = ro.calcIndent $ Drawer is deep
         applyMode =
-            case mode of
+            case ro.drawerPolicy of
                 DrawerUpper -> String.toUpper
                 DrawerLower -> String.toLower
+                KeepCase -> identity
 
 
 layoutLogBookEntry :: Org.LogBookEntry -> Doc
@@ -558,6 +561,7 @@ showdd n =
 indentByDeep :: RO
 indentByDeep =
     { calcIndent : indentFn
+    , drawerPolicy : KeepCase
     }
     where
         indentFn (Block deep) = deepToIndent deep
@@ -588,12 +592,14 @@ _indentByLt idx =
 alwaysZeroRO :: RO
 alwaysZeroRO =
     { calcIndent : const 0
+    , drawerPolicy : KeepCase
     }
 
 
 defaultRO :: RO
 defaultRO =
     { calcIndent : indentFn
+    , drawerPolicy : KeepCase
     }
     where
         indentFn (ListItem parent lt idx) =
@@ -650,6 +656,7 @@ type IndentFn = IndentSubject -> Int
 
 type RenderOptions =
     { calcIndent :: IndentFn
+    , drawerPolicy :: DrawerMode
     }
 
 

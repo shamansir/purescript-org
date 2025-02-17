@@ -204,6 +204,13 @@ extractFromRoot =
                             Just logBookEntry -> GoesTo { hasLines : true } $ L $ Org.logbook_add logBookEntry logbook
                             Nothing -> target -- TODO: ?
                         }
+                    GoesTo { hasLines } (D drawer) ->
+                        { orgf
+                        , target : GoesTo { hasLines : true } $ D
+                            $ Org.drawer_add
+                                (if not hasLines then _listItemToWords liRules else Org.br : _listItemToWords liRules)
+                                drawer
+                        }
                     _ ->
                         { orgf : orgf # Org.append_bl (Org.det_item $ foldl applyListItemRule Org.emptyDetItem liRules)
                         , target
@@ -275,7 +282,7 @@ extractFromRoot =
         _startBlock target blockName mbParams =
             case target of
                 TopLevel ->
-                    case blockName of
+                    case String.toLower blockName of
                         "src"     -> GoesTo { hasLines : false } $ B { nested : false }
                                         $ case mbParams of
                                             Nothing -> Org.code' []
@@ -283,11 +290,10 @@ extractFromRoot =
                         "quote"   -> GoesTo { hasLines : false } $ B { nested : false } $ Org.quote []
                         "example" -> GoesTo { hasLines : false } $ B { nested : false } $ Org.example []
                         "comment" -> GoesTo { hasLines : false } $ B { nested : false } $ Org.bcomment []
+                        "verse"   -> GoesTo { hasLines : false } $ B { nested : false } $ Org.verse []
+                        "center"  -> GoesTo { hasLines : false } $ B { nested : false } $ Org.bcenter []
+                        "export"  -> GoesTo { hasLines : false } $ B { nested : false } $ Org.bexport []
                         _ -> TopLevel
-                        -- TODO: support other blocks:
-                        -- COMMENT|comment|EXAMPLE|example|EXPORT|export|SRC|src
-                        -- VERSE|verse
-                        -- CENTER|center|QUOTE|quote
                 -- when previous block wasn't finished, we should append the text to the block
                 GoesTo _ (B _ block) ->
                     GoesTo { hasLines : true }
@@ -368,6 +374,14 @@ extractFromRoot =
             , Rule "text" [ TextRule "text-normal" textContent, Rule "timestamp" tsRules ]
             ] -> Just $ Org.LogBookEntry { text : [ Org.text $ String.trim textContent ], mbTimestamp : Just $ buildTimeStamp tsRules }
             _ -> Nothing
+
+        _listItemToWords = case _ of -- FIXME: make `Drawer`s support `Block`s inside (when they are parseable)!
+            [ TextRule "indent" indentText
+            , TextRule "list-item-bullet" bulletText
+            , Rule "text" [ TextRule "text-normal" textContent ]
+            ] -> [ Org.text indentText, Org.text bulletText, Org.text " ", Org.text textContent ]
+            _ -> [ Org.text "" ]
+
 
         applyListItemRule litem =
             case _ of
