@@ -390,7 +390,7 @@ extractFromRoot =
         applyTimestampRule ts =
             case _ of
                 Rule "ts-inner-w-time"  [ TextRule "ts-date" dateStr, TextRule "ts-day" _, TextRule "ts-time" timeStr ] ->
-                    ts # Org.chdate (Org.parseDate dateStr) # Org.at_ (Org.parseTime timeStr)
+                    ts # Org.chdate (Org.parseDate dateStr) # Org.at_ (Org.parseTime timeStr) -- FIXME: `ts-day` could have different format: `Mo`, `Di`, `Mi` , `Do`, `Fr`, `Sa`, `So`
                 Rule "ts-inner-wo-time" [ TextRule "ts-date" dateStr, TextRule "ts-day" _ ] ->
                     ts # Org.chdate (Org.parseDate dateStr)
                 Rule "ts-modifiers" modifiers ->

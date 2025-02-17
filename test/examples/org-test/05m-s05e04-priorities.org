@@ -7,13 +7,13 @@
 #+ARCHIVE: myarchive.org::
 
 * TODO [#B] A first task with a priority
-SCHEDULED <2016-07-13 Wed>
+SCHEDULED: <2016-07-13 Wed>
 :PROPERTIES:
 :SOMEPROP: VAL
 :END:
 
 * TODO [#A] A second task with a priority
-SCHEDULED <2016-07-13 Wed>
+SCHEDULED: <2016-07-13 Wed>
 :PROPERTIES:
 :SOMEPROP: VAL
 :END:

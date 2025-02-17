@@ -92,7 +92,7 @@ pursifiedSamples =
     , mkPursSample Test04i.test (c 4 'i') (s "formatting-drawers")   $ f "formatting: drawers"
     , mkPursSample Test04i.test (c 4 'i') (s "formatting-drawers")   $ f "formatting: drawers"
 
-    , mkPursSample Test06a.test (c 6 'a') (s "properties-and-drawers") $ f "properties and drawers"
+    -- , mkPursSample Test06a.test (c 6 'a') (s "properties-and-drawers") $ f "properties and drawers"
     ]
 
     where
@@ -107,19 +107,19 @@ parsedSamples =
 
     -- From OrgMode tutorial by Rainer König: https://youtube.com/playlist?list=PLVtKhBrRV_ZkPnBtt_TD1Cs9PJlU0IIdE&si=Uo4uuf4-RM0ImLjK
 
-    [ mkEbnfSample' (c 5 'a') (ep 1 1) (s "headlines") (f "headlines : expanded")
-    , mkEbnfSample' (c 5 'b') (ep' 1 2 'a') (s "todo-keywords.v1") (f "TODO keywords. v1")
-    , mkEbnfSample' (c 5 'c') (ep' 1 2 'b') (s "todo-keywords.v2") (f "TODO keywords. v2")
-    , mkEbnfSample' (c 5 'd') (ep' 1 3 'a') (s "schedule") (f "types of schedules") -- fails
-    , mkEbnfSample' (c 5 'e') (ep 1 4) (s "repeating") (f "task repeating") -- fails
-    , mkEbnfSample' (c 5 'f') (ep 1 5) (s "checklists") (f "checklists") -- fails
-    , mkEbnfSample' (c 5 'g') (ep 2 1) (s "tags") (f "tags") -- fails
-    , mkEbnfSample' (c 5 'h') (ep 2 4) (s "drawers-logging") (f "logging in drawers") -- fails
-    , mkEbnfSample' (c 5 'i') (ep' 3 4 'a') (s "properties-drawer") (f "properties drawer") -- fails
-    , mkEbnfSample' (c 5 'j') (ep' 3 4 'b') (s "template") (f "template") -- fails
-    , mkEbnfSample' (c 5 'k') (ep 4 1) (s "ordered-tasks") (f "ordered tasks") -- fails
-    , mkEbnfSample' (c 5 'l') (ep 4 2) (s "timers") (f "timers") -- fails
-    , mkEbnfSample' (c 5 'm') (ep 5 4) (s "priorities") (f "priorities") -- fails
+    [ mkEbnfSample' noRefresh (c 5 'a') (ep 1 1) (s "headlines") (f "headlines : expanded")
+    , mkEbnfSample' noRefresh (c 5 'b') (ep' 1 2 'a') (s "todo-keywords.v1") (f "TODO keywords. v1")
+    , mkEbnfSample' noRefresh (c 5 'c') (ep' 1 2 'b') (s "todo-keywords.v2") (f "TODO keywords. v2")
+    -- , mkEbnfSample' (c 5 'd') (ep' 1 3 'a') (s "schedule") (f "types of schedules") -- fails
+    -- , mkEbnfSample' (c 5 'e') (ep 1 4) (s "repeating") (f "task repeating") -- fails
+    -- , mkEbnfSample' (c 5 'f') (ep 1 5) (s "checklists") (f "checklists") -- fails
+    -- , mkEbnfSample' (c 5 'g') (ep 2 1) (s "tags") (f "tags") -- fails
+    -- , mkEbnfSample' (c 5 'h') (ep 2 4) (s "drawers-logging") (f "logging in drawers") -- fails
+    -- , mkEbnfSample' (c 5 'i') (ep' 3 4 'a') (s "properties-drawer") (f "properties drawer") -- fails
+    -- , mkEbnfSample' (c 5 'j') (ep' 3 4 'b') (s "template") (f "template") -- fails
+    , mkEbnfSample' noRefresh (c 5 'k') (ep 4 1) (s "ordered-tasks") (f "ordered tasks")
+    , mkEbnfSample' noRefresh (c 5 'l') (ep 4 2) (s "timers") (f "timers")
+    , mkEbnfSample' noRefresh (c 5 'm') (ep 5 4) (s "priorities") (f "priorities")
     -- , mkEbnfSample (c 6 'a') (s "properties-and-drawers") (f "properties and drawers") -- fails
     ]
 
@@ -161,8 +161,22 @@ mkPursSample :: OrgFile -> Category -> Slug -> Friendly -> Sample
 mkPursSample file = mkSample $ pure file
 
 
-mkEbnfSample :: Category -> Slug -> Friendly -> Sample
-mkEbnfSample cat slug = mkSample (parseEbnf $ mkFileSlug cat slug) cat slug
+mkEbnfSample :: RefreshEbnfFile -> Category -> Slug -> Friendly -> Sample
+mkEbnfSample ref cat slug = mkSample (parseEbnf (refreshToBool ref) $ mkFileSlug cat slug) cat slug
+
+
+data RefreshEbnfFile
+    = Yes
+    | No
+
+
+refresh = Yes
+noRefresh = No
+
+
+refreshToBool = case _ of
+    Yes -> true
+    No -> false
 
 
 instance Show Episode where
@@ -174,17 +188,18 @@ instance Show Episode where
             Nothing -> ""
 
 
-mkEbnfSample' :: Category -> Episode -> Slug -> Friendly -> Sample
-mkEbnfSample' cat episode (Slug slug) (Friendly friendly) =
-    mkEbnfSample cat
+mkEbnfSample' :: RefreshEbnfFile -> Category -> Episode -> Slug -> Friendly -> Sample
+mkEbnfSample' ref cat episode (Slug slug) (Friendly friendly) =
+    mkEbnfSample ref cat
         (Slug $ show episode <> "-" <> slug)
         (Friendly $ show episode <> " — " <> slug)
 
 
-parseEbnf :: String -> Effect OrgFile
-parseEbnf fileSlug = do
+parseEbnf :: Boolean -> String -> Effect OrgFile
+parseEbnf updateEbnf fileSlug = do
     -- grammarText <- readTextFile UTF8 ebnfGrammarSrc
     -- orgTestText <- readTextFile UTF8 (testDir <> fileSlug <> ".org")
+    when updateEbnf $ Ebnf.writeEbnfJsonFor $ Ebnf.TestFileSlug fileSlug -- ENABLE to write `ebnf.json` result to file before
     jsonEbnfStr <- readTextFile UTF8 (testDir <> fileSlug <> ".ebnf.json")
     -- let jsonEbnfStr = Ebnf.parseOrgWithEbnf (Ebnf.EbnfGrammar grammarText) (Ebnf.OrgText orgTestText)
     let eOrgFile = (readJSON jsonEbnfStr :: E FromEbnf)

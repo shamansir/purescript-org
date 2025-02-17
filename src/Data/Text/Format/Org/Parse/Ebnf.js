@@ -17,28 +17,15 @@ function _parseOrgWithEbnf(grammarContents) {
 
 function _writeEbnfJsonFor(sourceSlug) {
     return function() {
-      fs.readFile('./src/Data/Text/Format/Org/Parse/org.ebnf', 'utf8', (err, grammar) => {
-        if (err) {
-          console.error(err);
-          return;
-        }
 
-        fs.readFile(testDir + sourceSlug + '.org', 'utf8', (err, orgText) => {
-          if (err) {
-              console.error(err);
-              return;
-            }
-          const result = parser(grammar)(orgText);
-          const resultJson = JSON.stringify({ data : result });
-          console.log(result);
+      const grammarText = fs.readFileSync('./src/Data/Text/Format/Org/Parse/org.ebnf', 'utf8');
 
-          fs.writeFile(testDir + orgSource + '.ebnf.json', resultJson, 'utf8', (err) =>
-          {
-              console.log(err);
-          });
-        });
+      const orgText = fs.readFileSync(testDir + sourceSlug + '.org', 'utf8');
 
-      });
+      const result = parser(grammarText)(orgText);
+      const resultJson = JSON.stringify({ data : result });
+
+      fs.writeFileSync(testDir + sourceSlug + '.ebnf.json', resultJson, 'utf8');
     }
 }
 

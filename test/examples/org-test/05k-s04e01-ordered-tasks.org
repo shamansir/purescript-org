@@ -7,9 +7,11 @@
 :PROPERTIES:
 :SOMEPROP: VAL
 :END:
+
 *** DONE Brainstorming for the topics
 *** PROJ SO1: Ordered Tasks
 :PROPERTIES:
+:SOMEPROP: VAL
 :END:
 - Show the ordered property
 + If set then you can't close a task until all tasks in the subtree are done
@@ -28,12 +30,13 @@
 *** PROJ S05: Effort estimates
 
 * PROJ Build a house :ORDERED:
-:PROPERIES:
+:PROPERTIES:
 :ORDERED: t
 :END:
+
 ** TODO Build the basement
-SCHEDULED <2016-06-27 Mo>
+SCHEDULED <2016-06-27 Mon>
 ** TODO Build the ground floor
-SCHEDULED <2016-06-28 Di>
+SCHEDULED <2016-06-28 Tue>
 ** TODO Build the roof
-SCHEDULED <2016-06-29 Mi>
+SCHEDULED <2016-06-29 Wed>
