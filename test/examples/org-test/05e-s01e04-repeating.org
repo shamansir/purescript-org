@@ -4,6 +4,9 @@
 ** NEXT Weekly Review
 SCHEDULED: <2016-06-10 Fri +1w>
 :PROPERTIES:
+:LAST_REPEAT: [2016-06-11 Sat 14:14]
+:END:
+:LOGBOOK:
 - State "DONE" from "NEXT" [2016-06-11 Sat 14:14]
 :END:
 
@@ -16,7 +19,9 @@ DEADLINE: <2016-06-24 Fri> SCHEDULED: <2016-06-13 Mon>
 * Maitenance
 ** NEXT Wash the car
 SCHEDULED: <2016-06-21 Sat ++4w>
+:LOGBOOK:
 - State "DONE" from "NEXT" [2016-06-11 Sat 14:17]
+:END:
 - Washing from outside and vacuum cleaning the inside
 ** PROJ Repair bycicle
 SCHEDULED: <2016-06-21 Sat .+4w>

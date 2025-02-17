@@ -25,7 +25,7 @@ You probably need to re adjust the gear shifting
 ** NEXT Get a birthday gift for wife
 DEADLINE: <2016-06-25 Sat> SCHEDULED: <2016-06-11 Sat>
 ** NEXT Watch concert of your kid in school
-SCHEDULED: <2016-06-15 Wed 16:00-17:00>
+SCHEDULED: <2016-06-15 Wed 16:00--17:00>
 - Don't miss that, otherwise kid is dissapointed
 
 * House stuff
