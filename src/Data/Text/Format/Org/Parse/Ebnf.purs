@@ -2,8 +2,6 @@ module Data.Text.Format.Org.Parse.Ebnf where
 
 import Prelude
 
--- import Debug as Debug
-
 import Effect (Effect)
 import Data.Maybe (Maybe(..), maybe, fromMaybe)
 import Data.String (Pattern(..))
@@ -23,7 +21,7 @@ import Data.Array ((:))
 import Data.Array (head, catMaybes, uncons, singleton) as Array
 import Data.Array.NonEmpty (fromArray, singleton) as NEA
 import Data.Either (Either(..))
-import Data.Newtype (unwrap)
+import Data.Newtype (unwrap, wrap)
 
 import Control.Alt ((<|>))
 
@@ -368,7 +366,7 @@ extractFromRoot =
             [ _ {- indent -}
             , _ {- list-item-bullet -}
             , Rule "text" [ TextRule "text-normal" textContent, Rule "timestamp" tsRules ]
-            ] -> Just $ Org.LogBookEntry { text : [ Org.text textContent ], mbTimestamp : Just $ buildTimeStamp tsRules }
+            ] -> Just $ Org.LogBookEntry { text : [ Org.text $ String.trim textContent ], mbTimestamp : Just $ buildTimeStamp tsRules }
             _ -> Nothing
 
         applyListItemRule litem =
@@ -421,7 +419,7 @@ extractFromRoot =
 
         applyTimestampRule ts =
             case _ of
-                Rule "ts-inner-w-time"  [ TextRule "ts-date" dateStr, TextRule "ts-day" _, TextRule "ts-time" timeStr ] ->
+                Rule "ts-inner-w-time" [ TextRule "ts-date" dateStr, TextRule "ts-day" _, TextRule "ts-time" timeStr ] ->
                     ts # Org.chdate (Org.parseDate dateStr) # Org.at_ (Org.parseTime timeStr) -- FIXME: `ts-day` could have different format: `Mo`, `Di`, `Mi` , `Do`, `Fr`, `Sa`, `So`
                 Rule "ts-inner-wo-time" [ TextRule "ts-date" dateStr, TextRule "ts-day" _ ] ->
                     ts # Org.chdate (Org.parseDate dateStr)
@@ -445,7 +443,14 @@ extractFromRoot =
                         (fromMaybe Org.One $ Org.parseDelayMode delStr)
                         (fromMaybe 0 $ Int.fromString valStr)
                         (fromMaybe Org.Day $ Org.parseInterval unitStr)
+                TextRule "ts-time" timeStr -> -- occurs in timespan, see `ts-inner-span`
+                    ts # Org.ch_rng (map unwrap >>> _setTimeRangeEnd (Org.parseTime timeStr) >>> wrap)
                 _ -> ts
+
+        _setTimeRangeEnd nextEnd =
+            case _ of
+                Just { start, end } -> { start, end : Just nextEnd }
+                Nothing -> { start : Org.t 0 0, end : Just nextEnd }
 
         applySecPlanningRule sec =
             case _ of
@@ -472,6 +477,8 @@ extractFromRoot =
             case tsRules of
                 [ Rule "timestamp-active"   [ Rule "ts-inner" innerTsRules ] ] -> foldl applyTimestampRule (Org.adate $ Org.d 0 0 0) innerTsRules
                 [ Rule "timestamp-inactive" [ Rule "ts-inner" innerTsRules ] ] -> foldl applyTimestampRule (Org.idate $ Org.d 0 0 0) innerTsRules
+                [ Rule "timestamp-active"   [ Rule "ts-inner-span" innerTsRules ] ] -> foldl applyTimestampRule (Org.adate $ Org.d 0 0 0) innerTsRules
+                [ Rule "timestamp-inactive" [ Rule "ts-inner-span" innerTsRules ] ] -> foldl applyTimestampRule (Org.idate $ Org.d 0 0 0) innerTsRules
                 _ -> Org.adate $ Org.d 0 0 0
 
         collectTextOnly =

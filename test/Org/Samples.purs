@@ -111,7 +111,7 @@ parsedSamples =
     , mkEbnfSample' noRefresh (c 5 'b') (ep' 1 2 'a') (s "todo-keywords.v1") (f "TODO keywords. v1")
     , mkEbnfSample' noRefresh (c 5 'c') (ep' 1 2 'b') (s "todo-keywords.v2") (f "TODO keywords. v2")
     , mkEbnfSample' noRefresh (c 5 'd') (ep' 1 3 'a') (s "schedule") (f "types of schedules")
-    , mkEbnfSample' noRefresh (c 5 'e') (ep 1 4) (s "repeating") (f "task repeating") -- fails
+    , mkEbnfSample' refresh (c 5 'e') (ep 1 4) (s "repeating") (f "task repeating") -- fails
     , mkEbnfSample' noRefresh (c 5 'f') (ep 1 5) (s "checklists") (f "checklists")
     , mkEbnfSample' noRefresh (c 5 'g') (ep 2 1) (s "tags") (f "tags")
     -- , mkEbnfSample' noRefresh (c 5 'h') (ep 2 4) (s "drawers-logging") (f "logging in drawers") -- fails
@@ -133,7 +133,13 @@ parsedSamples =
 
 
 samples :: Array Sample
-samples = pursifiedSamples <> parsedSamples
+samples =
+    -- [ mkEbnfSample' refresh
+    --     (Category 5 $ Just 'e')
+    --     (Episode { season : 1, episode : 4, mbChar : Nothing })
+    --     (Slug "repeating")
+    --     (Friendly "task repeating") ]
+    pursifiedSamples <> parsedSamples
 
 
 charToString char = String.fromCharArray [ char ]

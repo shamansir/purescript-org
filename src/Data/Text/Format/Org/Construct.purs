@@ -601,6 +601,12 @@ range :: OrgDateTime -> OrgDateTime -> Words
 range start end = DateTime { start, end : Just end }
 
 
+ch_rng :: (Maybe OrgTimeRange -> OrgTimeRange) -> OrgDateTime -> OrgDateTime
+ch_rng rangeF (OrgDateTime rec@{ time }) =
+    OrgDateTime $ rec { time = Just $ rangeF time }
+
+
+
 -- | Create `Section` of the level `l` with given array of `Words` as its heading and attach given `OrgDoc` to it
 sec :: Int -> Array Words -> OrgDoc -> Section
 sec level heading doc =
