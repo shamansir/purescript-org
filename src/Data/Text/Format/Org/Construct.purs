@@ -626,6 +626,7 @@ sec level heading doc =
                 , timestamp : Nothing
                 }
         , props : Prop.empty
+        , logbook : Nothing
         , drawers : []
         , comment : false
         , doc
@@ -756,6 +757,10 @@ mk_drawer name = mk_drawer' name <<< __neafws
 
 mk_drawer' :: String -> NonEmptyArray Words -> Drawer
 mk_drawer' name content = Drawer { name, content }
+
+
+set_logbook :: LogBook -> Section -> Section
+set_logbook logbook (Section sec) = Section $ sec { logbook = Just logbook }
 
 
 
@@ -1080,8 +1085,6 @@ inject_words words = case _ of
     Of kind curWords -> Of kind $ NEA.appendArray curWords words
     IsDrawer (Drawer { name, content }) ->
         IsDrawer $ Drawer { name, content : NEA.appendArray content words }
-    IsLogBook (LogBook items) ->
-        IsLogBook $ LogBook items -- <> [ LogBookEntry { text : words, mbTimestamp : Nothing } ] -- FIXME: should append to the last item?
     Footnote name curWords -> Footnote name $ NEA.appendArray curWords words
     List list -> List list
     DetachedItem (DetachedListItem def indent props curWords) ->

@@ -63,7 +63,6 @@ newtype OrgDoc =
 data Block
     = Of BlockKind (NonEmptyArray Words)
     | IsDrawer Drawer
-    | IsLogBook LogBook
     -- | Centered (NonEmptyArray Words) -- TODO
     | Footnote String (NonEmptyArray Words)
     | List ListItems
@@ -213,6 +212,7 @@ newtype Section =
         , tags :: Array String
         , planning :: Planning
         , props :: OrgProperties String
+        , logbook :: Maybe LogBook
         , drawers :: Array Drawer
         , comment :: Boolean
         , doc :: OrgDoc
@@ -346,6 +346,7 @@ derive instance Newtype Planning _
 derive instance Newtype Clock _
 derive instance Newtype Diary _
 derive instance Newtype LogBookEntry _
+derive instance Newtype LogBook _
 
 -- internals below, they don't need Newtype instance
 
@@ -719,7 +720,6 @@ instance JsonOverVariant BlockKindRow BlockKind where
 type BlockRow =
     ( kind :: Case2 BlockKind (Array Words)
     , drawer :: Case2 String (Array Words)
-    , logbook :: Case1 (Array (Record LogBookEntryRow))
     , paragraph :: Case1 (Array Words)
     , footnote :: Case2 String (Array Words)
     , hr :: Case
@@ -779,7 +779,6 @@ readBlock =
         (Proxy :: _ BlockRow)
         { kind : Variant.use2 $ \kind ws -> Of kind $ importWords ws
         , drawer : Variant.use2 $ \name ws -> IsDrawer $ Drawer { name, content : importWords ws }
-        , logbook : Variant.use1 $ IsLogBook <<< LogBook <<< map load
         , footnote : Variant.use2 $ \label ws -> Footnote label $ importWords ws
         , paragraph : Variant.use1 $ Paragraph <<< importWords
         , hr : Variant.use HRule
@@ -799,7 +798,6 @@ blockToVariant = case _ of
     Of kind words -> Variant.select2 (Proxy :: _ "kind") kind $ exportWords words
     Paragraph words -> Variant.select1 (Proxy :: _ "paragraph") $ exportWords words
     IsDrawer (Drawer { name, content }) -> Variant.select2 (Proxy :: _ "drawer") name $ exportWords content
-    IsLogBook (LogBook logbook) -> Variant.select1 (Proxy :: _ "logbook") $ convert <$> logbook
     Footnote label words -> Variant.select2 (Proxy :: _ "footnote") label $ exportWords words
     HRule -> Variant.select (Proxy :: _ "hr")
     FixedWidth words -> Variant.select1 (Proxy :: _ "fixed") $ exportWords words
@@ -825,7 +823,6 @@ blockFromVariant =
         , fixed : Variant.uncase1 >>> importWords >>> FixedWidth
         , paragraph : Variant.uncase1 >>> importWords >>> Paragraph
         , drawer : Variant.uncase2 >>> map importWords >>> Tuple.uncurry \name content -> IsDrawer $ Drawer { name, content }
-        , logbook : Variant.uncase1 >>> map load >>> LogBook >>> IsLogBook
         , footnote : Variant.uncase2 >>> map importWords >>> Tuple.uncurry Footnote
         , comment : Variant.uncase1 >>> LComment
         , list : Variant.uncase2 >>> Tuple.uncurry \ltype items -> List $ ListItems (fromVariant ltype) $ importItems items
@@ -1677,6 +1674,7 @@ type SectionRow =
     , level :: Int
     , planning :: Record PlanningRow
     , props :: JsonProperties String
+    , logbook :: Array (Record LogBookEntryRow)
     , comment :: Boolean
     , drawers :: Array Drawer
     , doc :: Record DocRow
@@ -1737,6 +1735,7 @@ emptySection =
         , tags : []
         , planning : emptyPlanning
         , props : Prop.empty
+        , logbook : Nothing
         , drawers : []
         , comment : false
         , doc : emptyDoc
@@ -1755,6 +1754,7 @@ convertSection sectionId (Section section) =
         , heading : exportWords section.heading
         , level : section.level
         , planning : convert section.planning
+        , logbook : fromMaybe [] $ map convert <$> unwrap <$> section.logbook
         , props : Prop.toJson section.props
         , drawers : section.drawers
         , tags : section.tags
@@ -1775,6 +1775,9 @@ loadSection allSections section =
         , level : section.level
         , tags : section.tags
         , planning : load section.planning
+        , logbook : if Array.length section.logbook > 0
+                        then Just $ LogBook $ load <$> section.logbook
+                        else Nothing
         , drawers : section.drawers
         , props : Prop.fromJson section.props
         , comment : section.comment

@@ -136,8 +136,8 @@ layoutBlock ro deep = case _ of
         layoutBlock ro deep blockA </> layoutBlock ro deep blockB
     Org.IsDrawer drawer ->
         layoutDrawer ro (Block deep) deep drawer
-    Org.IsLogBook logbook ->
-        layoutLogBook ro (Block deep) deep logbook
+    -- Org.IsLogBook logbook ->
+    --     layoutLogBook ro (Block deep) deep logbook
     Org.Footnote label def ->
         D.bracket "[" (D.text "fn:" <> D.text label) "]"
             <+> D.stack (layoutWords <$> NEA.toArray def) -- FIXME: impoperly renders line breaks, see 04e
@@ -235,6 +235,10 @@ layoutSection ro (Org.Section section) =
                 # unwrap
                 # map layoutProperty
                 # layoutDrawer' ro (Section deep) deep DrawerUpper "properties"
+        hasLogbookEntries =
+            section.logbook # maybe false (unwrap >>> Array.length >>> (_ > 0))
+        logbookDrawer logbook =
+            layoutLogBook ro (Block deep) deep logbook
         hasOtherDrawers =
             Array.length section.drawers > 0
         otherDrawers =
@@ -254,12 +258,14 @@ layoutSection ro (Org.Section section) =
             headlingLineCombined
                 <> (if hasPlanning then D.break <> planningLine <> D.break else D.break)
                 <> (if hasProperties then propertiesDrawer <> D.break else D.nil)
+                <> (if hasLogbookEntries then maybe D.nil logbookDrawer section.logbook <> D.break else D.nil)
                 <> (if headingHasSeveralLines then D.nest' indent restOfHeadingLines <> D.break else D.nil)
                 <> (if hasOtherDrawers then otherDrawers <> D.break else D.nil)
                 <> layoutDoc ro deep section.doc
         else
             headlingLineCombined
             <> (if hasProperties then D.break <> propertiesDrawer <> D.break else D.nil)
+            <> (if hasLogbookEntries then maybe D.nil logbookDrawer section.logbook <> D.break else D.nil)
             <> (if headingHasSeveralLines then D.nest' indent restOfHeadingLines <> D.break else D.nil)
             <> (if hasOtherDrawers then otherDrawers <> D.break else D.nil)
             <> (if hasPlanning then D.break <> planningLine <> D.break else D.break)

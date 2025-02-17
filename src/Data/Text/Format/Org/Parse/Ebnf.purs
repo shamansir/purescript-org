@@ -316,7 +316,7 @@ extractFromRoot =
                     in
                         orgf # Org.wdoc (Org.wlast_sec addDrawer)
                 GoesTo _ (L logbook) ->
-                    orgf # Org.append_bl (Org.IsLogBook logbook)
+                    orgf # Org.wdoc (Org.wlast_sec $ Org.set_logbook logbook)
                 GoesTo _ (P props) ->
                     if (Org.sectionsn (Org.docf orgf) > 0) then
                         orgf # Org.wdoc (Org.wlast_sec $ \sec -> foldl (flip Org.wprop) sec $ unwrap props)
