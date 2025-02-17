@@ -136,6 +136,8 @@ layoutBlock ro deep = case _ of
         layoutBlock ro deep blockA </> layoutBlock ro deep blockB
     Org.IsDrawer drawer ->
         layoutDrawer ro (Block deep) deep drawer
+    Org.IsLogBook logbook ->
+        layoutLogBook ro (Block deep) deep logbook
     Org.Footnote label def ->
         D.bracket "[" (D.text "fn:" <> D.text label) "]"
             <+> D.stack (layoutWords <$> NEA.toArray def) -- FIXME: impoperly renders line breaks, see 04e
@@ -190,6 +192,7 @@ layoutSection ro (Org.Section section) =
                             Org.Doing -> "DOING"
                             Org.Done -> "DONE"
                             Org.Now -> "NOW"
+                            Org.Next -> "NEXT"
                             Org.CustomKW s -> s
                         <#> D.text
         priorityPrefix = section.priority
@@ -231,7 +234,7 @@ layoutSection ro (Org.Section section) =
                 # Prop.toJson
                 # unwrap
                 # map layoutProperty
-                # layoutDrawer' ro (Section deep) deep DrawerUpper "properties" []
+                # layoutDrawer' ro (Section deep) deep DrawerUpper "properties"
         hasOtherDrawers =
             Array.length section.drawers > 0
         otherDrawers =
@@ -489,18 +492,25 @@ layoutKeyword kwd =
 
 
 layoutDrawer :: RO -> IndentSubject -> Deep -> Org.Drawer -> Doc
-layoutDrawer ro is deep (Org.Drawer { name, content, logbook }) =
+layoutDrawer ro is deep (Org.Drawer { name, content }) =
     content
         # NEA.toArray
         # _splitByBreak
-        # layoutDrawer' ro is deep DrawerLower name logbook
+        # layoutDrawer' ro is deep DrawerLower name
 
 
-layoutDrawer' :: RO -> IndentSubject -> Deep -> DrawerMode -> String -> Array Org.LogBookEntry -> Array Doc -> Doc
-layoutDrawer' ro is deep mode name logbook content =
+layoutLogBook :: RO -> IndentSubject -> Deep -> Org.LogBook -> Doc
+layoutLogBook ro is deep (Org.LogBook entries) =
+    entries
+        # map layoutLogBookEntry
+        # layoutDrawer' ro is deep DrawerUpper "LOGBOOK"
+
+
+layoutDrawer' :: RO -> IndentSubject -> Deep -> DrawerMode -> String -> Array Doc -> Doc
+layoutDrawer' ro is deep mode name content =
     D.indentBy indent (D.wrap ":" $ D.text $ applyMode name)
     </> D.nest' indent content
-    <> (if Array.length logbook > 0 then D.indentBy indent (D.joinWith D.break $ layoutLogBookEntry <$> logbook) else D.nil)
+    -- <> (if Array.length logbook > 0 then D.indentBy indent (D.joinWith D.break $ layoutLogBookEntry <$> logbook) else D.nil)
     </> D.indentBy indent (D.wrap ":" $ D.text $ applyMode "end")
     where
         indent = ro.calcIndent $ Drawer is deep
@@ -512,7 +522,7 @@ layoutDrawer' ro is deep mode name logbook content =
 
 layoutLogBookEntry :: Org.LogBookEntry -> Doc
 layoutLogBookEntry (Org.LogBookEntry { text, mbTimestamp }) =
-    D.mark "-" $ D.text (String.trim text) <+> case mbTimestamp of
+    D.mark "-" $ D.join (layoutWords <$> text) <+> case mbTimestamp of
         Just timestamp -> layoutDateTime timestamp
         Nothing -> D.nil
 

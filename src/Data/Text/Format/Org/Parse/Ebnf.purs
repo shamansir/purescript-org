@@ -2,7 +2,7 @@ module Data.Text.Format.Org.Parse.Ebnf where
 
 import Prelude
 
-import Debug as Debug
+-- import Debug as Debug
 
 import Effect (Effect)
 import Data.Maybe (Maybe(..), maybe, fromMaybe)
@@ -63,6 +63,7 @@ data Subject
     | D Org.Drawer
     | P (Prop.OrgProperties String)
     | K (KW.OrgKeywords String)
+    | L Org.LogBook
 
 
 data ContentTarget
@@ -107,6 +108,7 @@ extractFromRoot =
                     else
                         foldl (flip Org.meta_prop) orgf $ unwrap props
                 GoesTo _ (D drawer) -> orgf -- TODO
+                GoesTo _ (L logbook)  -> orgf -- TODO
                 GoesTo _ (B _ block)  -> orgf -- TODO
 
         applySub { orgf, target } = case _ of
@@ -143,6 +145,8 @@ extractFromRoot =
                                     GoesTo { hasLines : true } $ D $ Org.drawer_add wordsToAdd' drawer
                                 P props ->
                                     GoesTo { hasLines : true } $ P $ Prop.snoc props $ fromMaybe errorProp $ _extractProp $ String.joinWith "" $ collectTextOnly <$> _extractWordsRules contentRules
+                                L logBook ->
+                                    TopLevel -- there should be no raw lines content in the logboook..... right?
                                 K kws ->
                                     TopLevel -- we reset the level and apply them above
                 }
@@ -195,29 +199,15 @@ extractFromRoot =
                 , target
                 }
             Rule "list-item-line" liRules ->
-                let
-                    detListItem = foldl applyListItemRule Org.emptyDetItem liRules
-                    mbLogbookEntry = case liRules of
-                        [ _ {- indent -}
-                        , _ {- list-item-bullet -}
-                        , Rule "text" [ TextRule "text-normal" textContent, Rule "timestamp" tsRules ]
-                        ] -> Just $ Org.LogBookEntry { text : textContent, mbTimestamp : Just $ buildTimeStamp tsRules }
-                        _ -> Nothing
-                in case target of
-                    GoesTo { hasLines } (D drawer@(Org.Drawer { name })) ->
-                        if String.toLower name == "logbook"
-                            then
-                                { orgf
-                                , target : case mbLogbookEntry of
-                                    Just logBookEntry -> GoesTo { hasLines } $ D $ Org.drawer_add_log logBookEntry drawer
-                                    Nothing -> target -- TODO: ?
-                                }
-                            else
-                                { orgf : orgf # Org.append_bl (Org.det_item detListItem)
-                                , target
-                                }
+                case target of
+                    GoesTo _ (L logbook) ->
+                        { orgf
+                        , target : case _extractLogBookEntry liRules of
+                            Just logBookEntry -> GoesTo { hasLines : true } $ L $ Org.logbook_add logBookEntry logbook
+                            Nothing -> target -- TODO: ?
+                        }
                     _ ->
-                        { orgf : orgf # Org.append_bl (Org.det_item detListItem)
+                        { orgf : orgf # Org.append_bl (Org.det_item $ foldl applyListItemRule Org.emptyDetItem liRules)
                         , target
                         }
             Rule "footnote-line" [ TextRule "fn-label" fnLabel, Rule "text" wordsRules ] ->
@@ -233,9 +223,10 @@ extractFromRoot =
                      -- although rule is named `drawer-begin-line`, drawer end comes from parser this way
                     isDrawerEnd  = String.toLower drawerName == "end"
                     isProperties = String.toLower drawerName == "properties"
+                    isLogbook    = String.toLower drawerName == "logbook"
                 in
                     { orgf : if isDrawerEnd then _finishDrawer orgf target else orgf
-                    , target : if not isDrawerEnd && not isProperties then
+                    , target : if not isDrawerEnd && not isProperties && not isLogbook then
                             case target of
                                 GoesTo _ (P props) ->
                                     -- FIXME: it handles the issue when already parsing `PROPERTIES` block and there's only `:NAME:` w/o value, which is a valid property,
@@ -244,6 +235,8 @@ extractFromRoot =
                                 _ -> GoesTo { hasLines : false } $ D $ Org.mk_drawer drawerName []
                         else if isProperties then
                             GoesTo { hasLines : false } $ P $ Prop.empty
+                        else if isLogbook then
+                            GoesTo { hasLines : false } $ L $ Org.LogBook []
                         else TopLevel
                     }
             Rule "drawer-end-line" [] ->
@@ -324,6 +317,8 @@ extractFromRoot =
                                 Nothing -> sec # Org.sec_append_drawer drawer
                     in
                         orgf # Org.wdoc (Org.wlast_sec addDrawer)
+                GoesTo _ (L logbook) ->
+                    orgf # Org.append_bl (Org.IsLogBook logbook)
                 GoesTo _ (P props) ->
                     if (Org.sectionsn (Org.docf orgf) > 0) then
                         orgf # Org.wdoc (Org.wlast_sec $ \sec -> foldl (flip Org.wprop) sec $ unwrap props)
@@ -368,6 +363,13 @@ extractFromRoot =
                         Prop.prop nameStr valStr
                     else
                         Prop.propn nameStr
+
+        _extractLogBookEntry = case _ of
+            [ _ {- indent -}
+            , _ {- list-item-bullet -}
+            , Rule "text" [ TextRule "text-normal" textContent, Rule "timestamp" tsRules ]
+            ] -> Just $ Org.LogBookEntry { text : [ Org.text textContent ], mbTimestamp : Just $ buildTimeStamp tsRules }
+            _ -> Nothing
 
         applyListItemRule litem =
             case _ of

@@ -63,6 +63,7 @@ newtype OrgDoc =
 data Block
     = Of BlockKind (NonEmptyArray Words)
     | IsDrawer Drawer
+    | IsLogBook LogBook
     -- | Centered (NonEmptyArray Words) -- TODO
     | Footnote String (NonEmptyArray Words)
     | List ListItems
@@ -185,18 +186,10 @@ data DelayMode
     | All
 
 
-newtype LogBookEntry
-    = LogBookEntry
-        { text :: String
-        , mbTimestamp :: Maybe OrgDateTime
-        }
-
-
 newtype Drawer =
     Drawer
         { name :: String
         , content :: NonEmptyArray Words
-        , logbook :: Array LogBookEntry -- should be only in LogBook drawer
         }
 
 
@@ -241,11 +234,22 @@ newtype Diary =
         }
 
 
+newtype LogBookEntry
+    = LogBookEntry
+        { text :: Array Words
+        , mbTimestamp :: Maybe OrgDateTime
+        }
+
+
+newtype LogBook = LogBook (Array LogBookEntry)
+
+
 data Todo
     = Todo
     | Doing
     | Done
     | Now
+    | Next
     | CustomKW String
 
 
@@ -714,7 +718,8 @@ instance JsonOverVariant BlockKindRow BlockKind where
 
 type BlockRow =
     ( kind :: Case2 BlockKind (Array Words)
-    , drawer :: Case3 String (Array Words) (Array (Record LogBookEntryRow))
+    , drawer :: Case2 String (Array Words)
+    , logbook :: Case1 (Array (Record LogBookEntryRow))
     , paragraph :: Case1 (Array Words)
     , footnote :: Case2 String (Array Words)
     , hr :: Case
@@ -773,7 +778,8 @@ readBlock =
     readMatchImpl
         (Proxy :: _ BlockRow)
         { kind : Variant.use2 $ \kind ws -> Of kind $ importWords ws
-        , drawer : Variant.use3 $ \name ws logbook -> IsDrawer $ Drawer { name, content : importWords ws, logbook : load <$> logbook }
+        , drawer : Variant.use2 $ \name ws -> IsDrawer $ Drawer { name, content : importWords ws }
+        , logbook : Variant.use1 $ IsLogBook <<< LogBook <<< map load
         , footnote : Variant.use2 $ \label ws -> Footnote label $ importWords ws
         , paragraph : Variant.use1 $ Paragraph <<< importWords
         , hr : Variant.use HRule
@@ -792,7 +798,8 @@ blockToVariant :: Block -> Variant BlockRow
 blockToVariant = case _ of
     Of kind words -> Variant.select2 (Proxy :: _ "kind") kind $ exportWords words
     Paragraph words -> Variant.select1 (Proxy :: _ "paragraph") $ exportWords words
-    IsDrawer (Drawer { name, content, logbook }) -> Variant.select3 (Proxy :: _ "drawer") name (exportWords content) $ convert <$> logbook
+    IsDrawer (Drawer { name, content }) -> Variant.select2 (Proxy :: _ "drawer") name $ exportWords content
+    IsLogBook (LogBook logbook) -> Variant.select1 (Proxy :: _ "logbook") $ convert <$> logbook
     Footnote label words -> Variant.select2 (Proxy :: _ "footnote") label $ exportWords words
     HRule -> Variant.select (Proxy :: _ "hr")
     FixedWidth words -> Variant.select1 (Proxy :: _ "fixed") $ exportWords words
@@ -817,7 +824,8 @@ blockFromVariant =
         , hr : Variant.uncase HRule
         , fixed : Variant.uncase1 >>> importWords >>> FixedWidth
         , paragraph : Variant.uncase1 >>> importWords >>> Paragraph
-        , drawer : Variant.uncase3 >>> \( name /\ content /\ logbook ) -> IsDrawer $ Drawer { name, content : importWords content, logbook : load <$> logbook }
+        , drawer : Variant.uncase2 >>> map importWords >>> Tuple.uncurry \name content -> IsDrawer $ Drawer { name, content }
+        , logbook : Variant.uncase1 >>> map load >>> LogBook >>> IsLogBook
         , footnote : Variant.uncase2 >>> map importWords >>> Tuple.uncurry Footnote
         , comment : Variant.uncase1 >>> LComment
         , list : Variant.uncase2 >>> Tuple.uncurry \ltype items -> List $ ListItems (fromVariant ltype) $ importItems items
@@ -1169,6 +1177,7 @@ type TodoRow =
     , doing :: Case
     , done :: Case
     , now :: Case
+    , next :: Case
     , custom :: Case1 String
     )
 
@@ -1177,20 +1186,22 @@ readTodo :: Foreign -> F Todo
 readTodo =
     readMatchImpl
         (Proxy :: _ TodoRow)
-        { todo : Variant.use Todo
-        , doing : Variant.use Doing
-        , done : Variant.use Done
-        , now : Variant.use Now
+        { todo   : Variant.use Todo
+        , doing  : Variant.use Doing
+        , done   : Variant.use Done
+        , now    : Variant.use Now
+        , next   : Variant.use Next
         , custom : Variant.use1 CustomKW
         }
 
 
 todoToVariant :: Todo -> Variant TodoRow
 todoToVariant = case _ of
-    Todo -> Variant.select (Proxy :: _ "todo")
+    Todo  -> Variant.select (Proxy :: _ "todo")
     Doing -> Variant.select (Proxy :: _ "doing")
-    Done -> Variant.select (Proxy :: _ "done")
-    Now -> Variant.select (Proxy :: _ "now")
+    Done  -> Variant.select (Proxy :: _ "done")
+    Now   -> Variant.select (Proxy :: _ "now")
+    Next  -> Variant.select (Proxy :: _ "next")
     CustomKW s -> Variant.select1 (Proxy :: _ "custom") s
 
 
@@ -1201,6 +1212,7 @@ todoFromVariant =
         , doing : Variant.uncase Doing
         , done : Variant.uncase Done
         , now : Variant.uncase Now
+        , next : Variant.uncase Next
         , custom : Variant.uncase1 >>> CustomKW
         }
 
@@ -1632,7 +1644,7 @@ instance JsonOverRow PlanningRow Planning where
 
 
 type LogBookEntryRow =
-    ( text :: String
+    ( text :: Array Words
     , timestamp :: Maybe (Record JsonDateTimeRow)
     )
 
