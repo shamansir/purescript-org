@@ -114,13 +114,18 @@ parsedSamples =
     , mkEbnfSample' refresh (c 5 'e') (ep 1 4) (s "repeating") (f "task repeating")
     , mkEbnfSample' noRefresh (c 5 'f') (ep 1 5) (s "checklists") (f "checklists")
     , mkEbnfSample' noRefresh (c 5 'g') (ep 2 1) (s "tags") (f "tags")
-    , mkEbnfSample' noRefresh (c 5 'h') (ep 2 4) (s "drawers-logging") (f "logging in drawers") -- fails
+    , mkEbnfSample' noRefresh (c 5 'h') (ep 2 4) (s "drawers-logging") (f "logging in drawers")
     , mkEbnfSample' noRefresh (c 5 'i') (ep' 3 4 'a') (s "properties-drawer") (f "properties drawer")
     -- , mkEbnfSample' noRefresh (c 5 'j') (ep' 3 4 'b') (s "template") (f "template") -- fails (and it's ok)
     , mkEbnfSample' noRefresh (c 5 'k') (ep 4 1) (s "ordered-tasks") (f "ordered tasks")
     , mkEbnfSample' noRefresh (c 5 'l') (ep 4 2) (s "timers") (f "timers")
     , mkEbnfSample' noRefresh (c 5 'm') (ep 5 4) (s "priorities") (f "priorities")
     , mkEbnfSample noRefresh (c 6 'a') (s "properties-and-drawers") (f "properties and drawers") -- fails
+    -- , mkEbnfSample noRefresh (c 7 'a') (s "org-syntax-cheatsheet") (f "ORG syntax cheatsheet") -- fails
+    -- , mkEbnfSample noRefresh (c 7 'b') (s "organice.sample") (f "ORG Sample from organice") -- fails
+    , mkEbnfSample noRefresh (c 7 'c') (s "simple") (f "ORG in a simplest") -- fails
+    , mkEbnfSample noRefresh (c 7 'd') (s "test_a") (f "different features") -- fails
+    , mkEbnfSample noRefresh (c 7 'e') (s "test") (f "different features") -- fails
     ]
 
     where
@@ -152,6 +157,11 @@ mkSample fileEff cat@(Category n mbChar) s@(Slug slug) (Friendly friendly) =
         frsuffix = case mbChar of
             Just char -> " (" <> charToString char <> ")."
             Nothing -> "."
+
+
+mkSample' :: Effect OrgFile -> Slug -> Friendly -> Sample
+mkSample' fileEff (Slug slug) (Friendly friendly) =
+    { file : fileEff, slug, friendly : "Works with " <> friendly }
 
 
 mkFileSlug :: Category -> Slug -> String
