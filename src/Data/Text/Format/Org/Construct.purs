@@ -468,6 +468,10 @@ icomment :: String -> Words
 icomment = marked $ Inline IComment
 
 
+entity :: String -> Words
+entity = Entity
+
+
 {-
 atime :: T.Time -> OrgDateTime
 atime = ?wh

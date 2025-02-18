@@ -89,6 +89,7 @@ data Words
     | DiaryW Diary
     | FootnoteRef { label :: String, def :: Maybe String } -- FIXME: support using `Words` here may be, but it causes recursion fails when exporting to JSON
     | Break
+    | Entity String
     -- | Space
     -- | Indent Int
     | JoinW Words Words
@@ -1029,6 +1030,7 @@ type WordsRow =
     , break :: Case
     , marked :: Case2 (Array (Variant MarkupKeyRow)) String
     , fnref :: Case2 String (Maybe String) -- FIXME: since using Words here is causing recursion to fail
+    , entity :: Case1 String
     , empty :: Case
     -- , join :: Words /\ Words
     )
@@ -1048,6 +1050,7 @@ readWords =
         , diary : Variant.use1 $ DiaryW <<< load
         , clock : Variant.use1 $ ClockW <<< wrap
         , break : Variant.use Break
+        , entity : Variant.use1 Entity
         , fnref : Variant.use2 $ \label def -> FootnoteRef { label, def }
         , empty : Variant.use EmptyW
         -- , join : Variant.use2 JoinW
@@ -1067,6 +1070,7 @@ wordsToVariant = case _ of
     DiaryW diary -> Variant.select1 (Proxy :: _ "diary") $ convert diary
     Break -> Variant.select (Proxy :: _ "break")
     FootnoteRef { label, def } -> Variant.select2 (Proxy :: _ "fnref") label def
+    Entity entity -> Variant.select1 (Proxy :: _ "entity") $ entity
     JoinW wA wB -> Variant.select1 (Proxy :: _ "plain") "JOIN" -- FIXME: (we're flattening words before exporting, aren't we?)
     EmptyW -> Variant.select (Proxy :: _ "empty")
 
@@ -1080,6 +1084,7 @@ wordsFromVariant =
         , punct : Variant.uncase1 >>> codePointFromChar >>> Punct
         , plain : Variant.uncase1 >>> Plain
         , markup : Variant.uncase1 >>> Markup
+        , entity : Variant.uncase1 >>> Entity
         , dateTime : Variant.uncase2 >>> bimap load (map load) >>> Tuple.uncurry (\start end -> { start, end }) >>> DateTime
         , clock : Variant.uncase1 >>> wrap >>> ClockW
         , diary : Variant.uncase1 >>> load >>> DiaryW

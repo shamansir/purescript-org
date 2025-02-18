@@ -11,8 +11,8 @@ import Data.Enum (fromEnum)
 import Data.Maybe (Maybe(..), maybe, fromMaybe, isJust)
 import Data.Either (Either(..), either)
 import Data.Newtype (unwrap)
-import Data.String (toUpper, toLower, take, length, trim, toCodePointArray) as String
-import Data.String.CodeUnits (singleton) as String
+import Data.String (toUpper, toLower, take, length, trim, toCodePointArray, singleton) as String
+import Data.String.CodeUnits (singleton) as SCU
 import Data.Time (Time, hour, minute) as DT
 import Data.Tuple.Nested ((/\))
 import Data.CodePoint.Unicode (isUpper) as UC
@@ -195,7 +195,7 @@ layoutSection ro (Org.Section section) =
                         <#> D.text
         priorityPrefix = section.priority
                         <#> case _ of
-                            Org.Alpha c -> "[#" <> String.toUpper (String.singleton c) <> "]"
+                            Org.Alpha c -> "[#" <> String.toUpper (SCU.singleton c) <> "]"
                             Org.Num n -> "[#" <> show n <> "]"
                         <#> D.text
         cookieSuffix = section.cookie
@@ -285,11 +285,13 @@ layoutWords = case _ of
                     )
                     "]"
             Nothing ->
-                D.bracket "[[" (linkTrg trg) "]]"
+                linkTrg trg
+                -- D.bracket "[[" (linkTrg trg) "]]"
     Org.Image src ->
-        D.bracket "[[" (imgSrc src) "]]"
-    Org.Punct p -> D.nil -- FIXME
-    Org.Markup str -> D.nil -- FIXME
+        imgSrc src
+        -- D.bracket "[[" (imgSrc src) "]]"
+    Org.Punct p -> D.text $ String.singleton p -- FIXME
+    Org.Markup str -> D.text str -- FIXME
     Org.DateTime { start, end } ->
         case end of
             Just end' -> layoutDateTime start <> D.text "--" <> layoutDateTime end'
@@ -310,6 +312,7 @@ layoutWords = case _ of
             )
         "]"
     Org.JoinW wa wb -> layoutWords wa <> layoutWords wb
+    Org.Entity entity -> D.text "\\" <> D.text entity
     Org.EmptyW -> D.nil
     where
         markWith mk doc = case mk of
@@ -424,7 +427,7 @@ layoutItemsWith ro parentSubj (Deep deep) lt items  =
             Org.Hyphened -> "-"
             Org.Numbered -> show (idx + 1) <> "."
             Org.NumberedFrom n -> show (idx + n) <> "."
-            Org.Alphed -> (fromMaybe "?" $ String.singleton <$> (fromCharCode $ 0x61 + idx)) <> "."
+            Org.Alphed -> (fromMaybe "?" $ SCU.singleton <$> (fromCharCode $ 0x61 + idx)) <> "."
             Org.Prefixed str -> str
             # D.text
         checkPrefix = case _ of

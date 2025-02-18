@@ -615,6 +615,8 @@ extractFromRoot =
                     Just $ Org.subs textVal
                 Rule "text-sup" [ TextRule "text-subsup-word" textVal ] ->
                     Just $ Org.sups textVal
+                Rule "text-entity" [ TextRule "entity-name" entityName ] ->
+                    Just $ Org.entity entityName
                 Rule "text-link" [ Rule "text-link-plain" linkRules ] ->
                     Just $ Org.ref (createLinkTarget linkRules)
                 Rule "link-format" [ Rule "link" linkRules, TextRule "link-description" linkDescr ] ->
