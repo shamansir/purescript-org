@@ -8,6 +8,10 @@ import Data.String (Pattern(..))
 import Data.String (joinWith, length, split, uncons, codePointFromChar, drop, toLower, trim, stripPrefix, stripSuffix, indexOf, splitAt) as String
 import Data.String.CodePoints as SCP
 import Data.String.CodeUnits as SCU
+import Data.String.Regex (Regex(..))
+import Data.String.Regex as Regex
+import Data.String.Regex.Flags as Regex
+import Data.Either (hush) as Either
 import Data.Int (fromString) as Int
 import Data.Text.Format.Org.Types (OrgFile)
 import Data.Text.Format.Org.Types as Org
@@ -18,8 +22,8 @@ import Data.Text.Format.Org.Render as Render
 import Data.Text.Doc (render, Break(..), Indent(..)) as Doc
 import Data.Foldable (foldl)
 import Data.Array ((:))
-import Data.Array (head, catMaybes, uncons, singleton) as Array
-import Data.Array.NonEmpty (fromArray, singleton) as NEA
+import Data.Array (head, catMaybes, uncons, singleton, index) as Array
+import Data.Array.NonEmpty (fromArray, singleton, index) as NEA
 import Data.Either (Either(..))
 import Data.Newtype (unwrap, wrap)
 
@@ -208,8 +212,8 @@ extractFromRoot =
                 case target of
                     GoesTo _ (L logbook) ->
                         { orgf
-                        , target : case _extractLogBookEntry liRules of
-                            Just logBookEntry -> GoesTo { hasLines : true } $ L $ Org.logbook_add logBookEntry logbook
+                        , target : case _extractLogBookSubject liRules of
+                            Just logBookSubject -> GoesTo { hasLines : true } $ L $ Org.logbook_add (_makeLogBookEntry logBookSubject) logbook
                             Nothing -> target -- TODO: ?
                         }
                     GoesTo { hasLines } (D drawer) ->
@@ -376,30 +380,71 @@ extractFromRoot =
                     else
                         Prop.propn nameStr
 
-        _extractLogBookEntry = case _ of -- FIXME: make `Drawer`s support `Block`s inside (when they are parseable)!
+        _extractLogBookSubject = case _ of -- FIXME: make `Drawer`s support `Block`s inside (when they are parseable)!
             [ _ {- indent -}
             , _ {- list-item-bullet -}
             , Rule "text" [ TextRule "text-normal" textContent, Rule "timestamp" tsRules ]
-            ] -> Just $ Org.LogBookEntry
-                { text : [ Org.text $ String.trim textContent ]
-                , mbTimestamp : Just $ buildTimeStamp tsRules
-                , continuation : []
-                }
+            ] -> Just $
+                let
+                    timeStamps = [ buildTimeStamp tsRules ]
+                    words = [ Org.text textContent ]
+                in
+                    fromMaybe (Org.Other [] timeStamps) $ _detectEntry textContent timeStamps
             [ _ {- indent -}
             , _ {- list-item-bullet -}
             , Rule "text"
-                [ TextRule "text-normal" textContent
+                [ TextRule "text-normal" "Rescheduled from \""
+                , Rule "timestamp" tsRulesFrom
+                , TextRule "text-normal" "\" on \""
+                , Rule "timestamp" tsRulesOn
+                , TextRule "text-normal" "\""
+                ]
+            ] -> Just $ Org.Reschedule (buildTimeStamp tsRulesFrom) (buildTimeStamp tsRulesOn)
+            [ _ {- indent -}
+            , _ {- list-item-bullet -}
+            , Rule "text"
+                [ TextRule "text-normal" "Rescheduled from \""
+                , Rule "timestamp" tsRulesFrom
+                , TextRule "text-normal" "\" on \""
+                , Rule "timestamp" tsRulesOn
+                , TextRule "text-normal" "\" "
+                , TextRule "text-normal" "\\" -- markers for continuation
+                , TextRule "text-normal" "\\" -- markers for continuation
+                ]
+            ] -> Just $ Org.Reschedule (buildTimeStamp tsRulesFrom) (buildTimeStamp tsRulesOn)
+            [ _ {- indent -}
+            , _ {- list-item-bullet -}
+            , Rule "text"
+                [ TextRule "text-normal" "Note taken on "
                 , Rule "timestamp" tsRules
                 , TextRule "text-normal" " "
                 , TextRule "text-normal" "\\" -- markers for continuation
                 , TextRule "text-normal" "\\" -- markers for continuation
                 ]
-            ] -> Just $ Org.LogBookEntry
-                { text : [ Org.text $ String.trim textContent ]
-                , mbTimestamp : Just $ buildTimeStamp tsRules
-                , continuation : []
-                }
+            ] -> Just $ Org.NoteTaken $ buildTimeStamp tsRules
             _ -> Nothing
+
+        _makeLogBookEntry subject = Org.LogBookEntry $ { subject, continuation : [] }
+
+        _detectEntry text timestamps =
+            matchStateChange
+            where
+                matchStateChange = do
+                    -- NB: for capturing groups to work it is required to have no global flag set
+                    regex <- Either.hush $ Regex.regex "State\\s+\"(\\w+)\"\\s+from\\s+\"(\\w+)\"" $ Regex.noFlags
+                    matches <- Regex.match regex text
+                    fromMatch <- identity =<< NEA.index matches 1
+                    toMatch <- identity =<< NEA.index matches 2
+                    timestamp <- Array.index timestamps 0
+                    pure $ Org.StateChange (parseTodo fromMatch) (parseTodo toMatch) timestamp
+
+        parseTodo = case _ of
+            "TODO" -> Org.Todo
+            "DOING" -> Org.Doing
+            "DONE" -> Org.Done
+            "NOW" -> Org.Now
+            "NEXT" -> Org.Next
+            str -> Org.CustomKW str
 
         _listItemToWords = case _ of -- FIXME: make `Drawer`s support `Block`s inside (when they are parseable)!
             [ TextRule "indent" indentText

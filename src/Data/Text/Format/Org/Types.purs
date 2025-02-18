@@ -234,11 +234,17 @@ newtype Diary =
         }
 
 
+data LogBookEntrySubject
+    = StateChange Todo Todo OrgDateTime
+    | Reschedule OrgDateTime OrgDateTime
+    | NoteTaken OrgDateTime
+    | Other (Array Words) (Array OrgDateTime)
+
+
 newtype LogBookEntry
     = LogBookEntry
-        { text :: Array Words
+        { subject :: LogBookEntrySubject
         , continuation :: Array (Array Words)
-        , mbTimestamp :: Maybe OrgDateTime
         }
 
 
@@ -1641,18 +1647,64 @@ instance JsonOverRow PlanningRow Planning where
 -- convertOrgFile :: OrgFile -> Record FileRow
 
 
+type LogBookSubjectRow =
+    ( state :: Case3 (Variant TodoRow) (Variant TodoRow) JsonDateTime
+    , reschedule :: Case2 JsonDateTime JsonDateTime
+    , note :: Case1 JsonDateTime
+    , other :: Case2 (Array Words) (Array JsonDateTime)
+    )
+
+
+readEntrySubject :: Foreign -> F LogBookEntrySubject
+readEntrySubject =
+    readMatchImpl
+        (Proxy :: _ LogBookSubjectRow)
+        { state : Variant.use3 \fromVar toVar jsonTimestamp ->
+                        StateChange (fromVariant fromVar) (fromVariant toVar) (loadDateTimeNT jsonTimestamp)
+        , reschedule : Variant.use2 \from to -> Reschedule (loadDateTimeNT from) (loadDateTimeNT to)
+        , note : Variant.use1 $ NoteTaken <<< loadDateTimeNT
+        , other : Variant.use2 \words stamps -> Other words $ loadDateTimeNT <$> stamps
+        }
+
+
+entrySubjectToVariant :: LogBookEntrySubject -> Variant LogBookSubjectRow
+entrySubjectToVariant = case _ of
+    StateChange from to timestamp -> Variant.select3 (Proxy :: _ "state") (toVariant from) (toVariant to) (convertDateTimeNT timestamp)
+    Reschedule from to -> Variant.select2 (Proxy :: _ "reschedule") (convertDateTimeNT from) (convertDateTimeNT to)
+    NoteTaken ts -> Variant.select1 (Proxy :: _ "note") $ convertDateTimeNT ts
+    Other words stamps -> Variant.select2 (Proxy :: _ "other") words $ convertDateTimeNT <$> stamps
+
+
+entrySubjectFromVariant :: Variant LogBookSubjectRow -> LogBookEntrySubject
+entrySubjectFromVariant =
+    Variant.match
+        { state : Variant.uncase3 >>> \(fromVar /\ toVar /\ jsonTimestamp) ->
+                        StateChange (fromVariant fromVar) (fromVariant toVar) (loadDateTimeNT jsonTimestamp)
+        , reschedule : Variant.uncase2 >>> bimap loadDateTimeNT loadDateTimeNT >>> Tuple.uncurry Reschedule
+        , note : Variant.uncase1 >>> loadDateTimeNT >>> NoteTaken
+        , other : Variant.uncase2 >>> map (map loadDateTimeNT) >>> Tuple.uncurry Other
+        }
+
+
+instance ReadForeign LogBookEntrySubject where readImpl = readImplVar
+instance WriteForeign LogBookEntrySubject where writeImpl = writeImplVar
+instance JsonOverVariant LogBookSubjectRow LogBookEntrySubject where
+    readForeign = readEntrySubject
+    toVariant = entrySubjectToVariant
+    fromVariant = entrySubjectFromVariant
+
+
 type LogBookEntryRow =
-    ( text :: Array Words
+    ( subject :: Variant LogBookSubjectRow
     , continuation :: Array (Array Words)
-    , timestamp :: Maybe (Record JsonDateTimeRow)
     )
 
 
 instance ReadForeign LogBookEntry where readImpl = readImplRow
 instance WriteForeign LogBookEntry where writeImpl = writeImplRow
 instance JsonOverRow LogBookEntryRow LogBookEntry where
-    convert = unwrap >>> \{ text, mbTimestamp, continuation } -> { text, timestamp : convert <$> mbTimestamp, continuation }
-    load { text, timestamp, continuation } = wrap { text, mbTimestamp : load <$> timestamp, continuation }
+    convert = unwrap >>> \{ subject, continuation } -> { subject : toVariant subject, continuation }
+    load { subject, continuation } = wrap { subject : fromVariant subject, continuation }
 
 
 type DocRow =

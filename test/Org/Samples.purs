@@ -111,7 +111,7 @@ parsedSamples =
     , mkEbnfSample' noRefresh (c 5 'b') (ep' 1 2 'a') (s "todo-keywords.v1") (f "TODO keywords. v1")
     , mkEbnfSample' noRefresh (c 5 'c') (ep' 1 2 'b') (s "todo-keywords.v2") (f "TODO keywords. v2")
     , mkEbnfSample' noRefresh (c 5 'd') (ep' 1 3 'a') (s "schedule") (f "types of schedules")
-    , mkEbnfSample' refresh (c 5 'e') (ep 1 4) (s "repeating") (f "task repeating")
+    , mkEbnfSample' noRefresh (c 5 'e') (ep 1 4) (s "repeating") (f "task repeating")
     , mkEbnfSample' noRefresh (c 5 'f') (ep 1 5) (s "checklists") (f "checklists")
     , mkEbnfSample' noRefresh (c 5 'g') (ep 2 1) (s "tags") (f "tags")
     , mkEbnfSample' noRefresh (c 5 'h') (ep 2 4) (s "drawers-logging") (f "logging in drawers")
@@ -120,12 +120,12 @@ parsedSamples =
     , mkEbnfSample' noRefresh (c 5 'k') (ep 4 1) (s "ordered-tasks") (f "ordered tasks")
     , mkEbnfSample' noRefresh (c 5 'l') (ep 4 2) (s "timers") (f "timers")
     , mkEbnfSample' noRefresh (c 5 'm') (ep 5 4) (s "priorities") (f "priorities")
-    , mkEbnfSample noRefresh (c 6 'a') (s "properties-and-drawers") (f "properties and drawers") -- fails
+    , mkEbnfSample noRefresh (c 6 'a') (s "properties-and-drawers") (f "properties and drawers")
     -- , mkEbnfSample noRefresh (c 7 'a') (s "org-syntax-cheatsheet") (f "ORG syntax cheatsheet") -- fails
     -- , mkEbnfSample noRefresh (c 7 'b') (s "organice.sample") (f "ORG Sample from organice") -- fails
     , mkEbnfSample noRefresh (c 7 'c') (s "simple") (f "ORG in a simplest") -- fails
     , mkEbnfSample noRefresh (c 7 'd') (s "test_a") (f "different features") -- fails
-    , mkEbnfSample noRefresh (c 7 'e') (s "test") (f "different features") -- fails
+    , mkEbnfSample noRefresh (c 7 'e') (s "test") (f "different features v.2") -- fails
     ]
 
     where

@@ -27,6 +27,8 @@ import Data.Text.Format.Org.Keyword as KW
 import Data.Text.Format.Org.Property as Prop
 
 import Data.Text.Output (class ToDoc)
+import Data.Time (Time, hour, minute) as DT
+import Data.Tuple.Nested ((/\))
 
 
 newtype Deep = Deep Int
@@ -189,13 +191,7 @@ layoutSection ro (Org.Section section) =
         levelPrefix = Array.replicate section.level "*" # Array.fold # D.text
         commentPrefix = if section.comment then Just $ D.text "COMMENT" else Nothing
         todoPrefix = section.todo
-                        <#> case _ of
-                            Org.Todo -> "TODO"
-                            Org.Doing -> "DOING"
-                            Org.Done -> "DONE"
-                            Org.Now -> "NOW"
-                            Org.Next -> "NEXT"
-                            Org.CustomKW s -> s
+                        <#> renderTodo
                         <#> D.text
         priorityPrefix = section.priority
                         <#> case _ of
@@ -531,16 +527,25 @@ layoutDrawer' ro is deep name content =
 
 
 layoutLogBookEntry :: Org.LogBookEntry -> Doc
-layoutLogBookEntry (Org.LogBookEntry { text, mbTimestamp, continuation }) =
-    D.mark "-" $ D.join (layoutWords <$> text)
-    <+> case mbTimestamp of
-        Just timestamp -> layoutDateTime timestamp
-        Nothing -> D.nil
+layoutLogBookEntry (Org.LogBookEntry { subject, continuation }) =
+    D.mark "-" $ D.join (subjectText subject)
     <> mbContPostfix
     <>  if Array.length continuation > 0 then
             D.join (D.join <$> map layoutWords <$> continuation)
         else D.nil
-    where mbContPostfix = if Array.length continuation > 0 then D.text " \\\\" else D.nil
+    where
+      mbContPostfix = if Array.length continuation > 0 then D.text " \\\\" else D.nil
+      subjectText = case _ of
+        Org.StateChange from to tstamp ->
+            [ D.text "State \""
+            , D.text $ renderTodo from
+            , D.text "\" from \""
+            , D.text $ renderTodo to
+            , D.text "\" "
+            , layoutDateTime tstamp ]
+        Org.Reschedule fromts tots -> [ D.text "Rescheduled from \"", layoutDateTime fromts, D.text "\" on \"", layoutDateTime tots, D.text "\"" ]
+        Org.NoteTaken tstamp -> [ D.text "Note taken on ", layoutDateTime tstamp ]
+        Org.Other words timestamps -> [ D.join $ layoutWords <$> words, D.join $ layoutDateTime <$> timestamps ]
 
 
 layoutTable :: Array Org.TableRow -> Doc
@@ -621,6 +626,16 @@ defaultRO =
                             else 0
                         _ -> 0
         indentFn _ = 0
+
+
+renderTodo :: Org.Todo -> String
+renderTodo = case _ of
+    Org.Todo -> "TODO"
+    Org.Doing -> "DOING"
+    Org.Done -> "DONE"
+    Org.Now -> "NOW"
+    Org.Next -> "NEXT"
+    Org.CustomKW s -> s
 
 
 _splitByBreak :: Array Org.Words -> Array Doc

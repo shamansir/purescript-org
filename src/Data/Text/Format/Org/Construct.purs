@@ -484,8 +484,8 @@ logbook_cont contWords (LogBook items) =
 
 
 logbook_item_cont :: Array Words -> LogBookEntry -> LogBookEntry
-logbook_item_cont contWords (LogBookEntry { text, mbTimestamp, continuation }) =
-    LogBookEntry { text, mbTimestamp, continuation : Array.snoc continuation contWords }
+logbook_item_cont contWords (LogBookEntry { subject, continuation }) =
+    LogBookEntry { subject, continuation : Array.snoc continuation contWords }
 
 
 -- | Create time from hours and minutes (exactly in this order) numbers with fallback to `bottom` of `Enum` for every invalid integer not in range
@@ -816,7 +816,7 @@ sec_append_drawer drawer = __qset $ \sec -> sec { drawers = Array.snoc sec.drawe
 
 
 note :: Array Words -> OrgDateTime -> LogBookEntry
-note text tstamp = LogBookEntry { text, mbTimestamp : Just tstamp, continuation : [] }
+note text tstamp = LogBookEntry { subject : NoteTaken tstamp, continuation : [ text ] }
 
 
 comment :: Section -> Section

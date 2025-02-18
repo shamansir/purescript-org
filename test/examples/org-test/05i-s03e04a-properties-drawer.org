@@ -27,7 +27,7 @@ SCHEDULED: <2016-06-16 Thu +1w>
 :LAST_REPEAT: [2016-06-23 Thu 21:14]
 :END:
 :LOGBOOK:
-- State "DONE"  from "NEXT" [2016-06-23 Thu 20:14]
+- State "DONE" from "NEXT" [2016-06-23 Thu 20:14]
 :END:
 
 ** NEXT Repeating task B
