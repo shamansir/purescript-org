@@ -284,8 +284,11 @@ extractFromRoot =
                 { orgf : orgf # Org.append_bl
                     (case Org.last_bl_of $ Org.docf orgf of
                         -- append line break if the table was last
-                        Just (Org.Table _ _) -> Org.joinB Org.blank $ Org.table $ Array.catMaybes $ extractRowRule <$> tableRows
-                        _ ->                    Org.table $ Array.catMaybes $ extractRowRule <$> tableRows
+                        Just (Org.Table _ _) ->
+                            Org.joinB Org.blank $ case Array.head $ Array.catMaybes $ extractTableFormula <$> tableRows of
+                                Just formula -> Org.tablef formula $ Array.catMaybes $ extractRowRule <$> tableRows
+                                Nothing -> Org.table $ Array.catMaybes $ extractRowRule <$> tableRows
+                        _ -> Org.table $ Array.catMaybes $ extractRowRule <$> tableRows
                     )
                 , target : TopLevel
                 }
@@ -557,6 +560,11 @@ extractFromRoot =
         extractCellRule =
             case _ of
                 TextRule "table-cell" cellText -> Just $ Org.Column $ NEA.singleton $ Org.text cellText
+                _ -> Nothing
+
+        extractTableFormula =
+            case _ of
+                TextRule "table-formula" formulaText -> Just formulaText
                 _ -> Nothing
 
         buildTimeStamp tsRules =

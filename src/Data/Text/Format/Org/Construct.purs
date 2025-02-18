@@ -222,6 +222,10 @@ table :: Array TableRow -> Block
 table = Table Nothing <<< __neaf tbreak
 
 
+tablef :: String -> Array TableRow -> Block
+tablef formula = Table (Just formula) <<< __neaf tbreak
+
+
 tbreak :: TableRow
 tbreak = BreakT
 
@@ -1115,7 +1119,7 @@ inject_words words = case _ of
     List list -> List list
     DetachedItem (DetachedListItem def indent props curWords) ->
         DetachedItem $ DetachedListItem def indent props $ NEA.appendArray curWords words
-    Table title table -> Table title table
+    Table mbFormula table -> Table mbFormula table
     HRule -> HRule
     Paragraph curWords -> Paragraph $ NEA.appendArray curWords words
     WithKeyword kw block -> WithKeyword kw $ inject_words words block

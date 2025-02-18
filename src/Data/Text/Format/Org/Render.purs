@@ -114,8 +114,8 @@ layoutBlock ro deep = case _ of
                 $ Org.ListItems ltype
                 $ NEA.singleton
                 $ Org.itemFromDetached ditem
-    Org.Table format rows ->
-        layoutTable $ NEA.toArray rows
+    Org.Table mbFormat rows ->
+        layoutTable mbFormat $ NEA.toArray rows
     Org.Paragraph words ->
         words
             # NEA.toArray
@@ -551,9 +551,12 @@ layoutLogBookEntry (Org.LogBookEntry { subject, continuation }) =
         Org.Other words timestamps -> [ D.join $ layoutWords <$> words, D.join $ layoutDateTime <$> timestamps ]
 
 
-layoutTable :: Array Org.TableRow -> Doc
-layoutTable rows =
-    D.joinWith D.break $ layoutRow <$> rows
+layoutTable :: Maybe String -> Array Org.TableRow -> Doc
+layoutTable mbFormula rows =
+    (D.joinWith D.break $ layoutRow <$> rows)
+    <> case mbFormula of
+        Just formula -> D.text "#+TBLFM: " <> D.text formula
+        Nothing -> D.nil
     where
         columnsCount = Array.foldl max 0 $ columnsAt <$> rows
         columnsAt Org.BreakT = 0
