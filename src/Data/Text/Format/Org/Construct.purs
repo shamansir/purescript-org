@@ -222,12 +222,16 @@ table :: Array TableRow -> Block
 table = Table Nothing <<< __neaf tbreak
 
 
-tablef :: String -> Array TableRow -> Block
-tablef formula = Table (Just formula) <<< __neaf tbreak
+tablef :: TableFormat -> Array TableRow -> Block
+tablef format = Table (Just format) <<< __neaf tbreak
 
 
 tbreak :: TableRow
-tbreak = BreakT
+tbreak = BreakT Nothing
+
+
+tbreak_c :: TableCustomBreak -> TableRow
+tbreak_c = BreakT <<< Just
 
 
 tcol :: Array Words -> TableColumn

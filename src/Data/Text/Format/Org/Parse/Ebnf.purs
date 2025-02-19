@@ -285,14 +285,17 @@ extractFromRoot =
                     (case Org.last_bl_of $ Org.docf orgf of
                         -- append line break if the table was last
                         Just (Org.Table _ _) ->
-                            Org.joinB Org.blank $ case Array.head $ Array.catMaybes $ extractTableFormula <$> tableRows of
-                                Just formula -> Org.tablef formula $ Array.catMaybes $ extractRowRule <$> tableRows
-                                Nothing -> Org.table $ Array.catMaybes $ extractRowRule <$> tableRows
-                        _ -> Org.table $ Array.catMaybes $ extractRowRule <$> tableRows
+                            Org.joinB Org.blank $ _tableFrom tableRows
+                        _ -> _tableFrom tableRows
                     )
                 , target : TopLevel
                 }
             _ -> { orgf, target }
+
+        _tableFrom tableRows =
+            case Array.head $ Array.catMaybes $ extractTableFormula <$> tableRows of
+                Just format -> Org.tablef format $ Array.catMaybes $ extractRowRule <$> tableRows
+                Nothing -> Org.table $ Array.catMaybes $ extractRowRule <$> tableRows
 
         _startBlock target blockName mbParams =
             case target of
@@ -554,7 +557,7 @@ extractFromRoot =
         extractRowRule =
             case _ of
                 Rule "table-row" [ Rule "table-row-cells" cellsRules ] -> NEA.fromArray (Array.catMaybes $ extractCellRule <$> cellsRules) <#> Org.Row
-                Rule "table-row" [ TextRule "table-row-sep" sepText ] -> Just $ Org.BreakT
+                Rule "table-row" [ TextRule "table-row-sep" sepText ] -> Just $ Org.BreakT $ Just $ Org.TableCustomBreak sepText
                 _ -> Nothing
 
         extractCellRule =
@@ -564,7 +567,7 @@ extractFromRoot =
 
         extractTableFormula =
             case _ of
-                TextRule "table-formula" formulaText -> Just formulaText
+                TextRule "table-formula" formulaText -> Just $ Org.TableFormat formulaText
                 _ -> Nothing
 
         buildTimeStamp tsRules =

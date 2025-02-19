@@ -2,6 +2,8 @@ module Data.Text.Format.Org.Render where
 
 import Prelude
 
+import Debug as Debug
+
 import Data.Array as Array
 import Data.Array.NonEmpty (NonEmptyArray)
 import Data.Array.NonEmpty as NEA
@@ -551,18 +553,20 @@ layoutLogBookEntry (Org.LogBookEntry { subject, continuation }) =
         Org.Other words timestamps -> [ D.join $ layoutWords <$> words, D.join $ layoutDateTime <$> timestamps ]
 
 
-layoutTable :: Maybe String -> Array Org.TableRow -> Doc
-layoutTable mbFormula rows =
+layoutTable :: Maybe Org.TableFormat -> Array Org.TableRow -> Doc
+layoutTable mbFormat rows =
     (D.joinWith D.break $ layoutRow <$> rows)
-    <> case mbFormula of
-        Just formula -> D.text "#+TBLFM: " <> D.text formula
+    <> case mbFormat of
+        Just (Org.TableFormat format) -> D.break <> D.text "#+TBLFM: " <> D.text format <> D.break
         Nothing -> D.nil
     where
         columnsCount = Array.foldl max 0 $ columnsAt <$> rows
-        columnsAt Org.BreakT = 0
+        columnsAt (Org.BreakT _) = 0
         columnsAt (Org.Row columns) = NEA.length columns
-        layoutRow Org.BreakT =
+        layoutRow (Org.BreakT Nothing) =
             D.wrap "|" $ D.joinWith (D.text "+") $ Array.replicate columnsCount $ D.text "-"
+        layoutRow (Org.BreakT (Just (Org.TableCustomBreak customBreak))) =
+            D.text customBreak
         layoutRow (Org.Row columns) =
             D.wrap "|" $ D.joinWith (D.text "|") $ layoutColumn <$> NEA.toArray columns
         layoutColumn Org.Empty =

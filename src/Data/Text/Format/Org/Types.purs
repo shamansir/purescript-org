@@ -21,6 +21,7 @@ import Data.Tuple as Tuple
 import Data.Time (Time(..))
 import Data.Time as Time
 import Data.Enum (fromEnum, toEnum)
+import Data.Either (Either(..))
 -- import Data.Time (TimeOfDay)
 import Data.Variant (Variant)
 import Data.Variant (match) as Variant
@@ -67,7 +68,7 @@ data Block
     | Footnote String (NonEmptyArray Words)
     | List ListItems
     | DetachedItem DetachedListItem -- used only for `EBNF` parsing
-    | Table (Maybe String) (NonEmptyArray TableRow)
+    | Table (Maybe TableFormat) (NonEmptyArray TableRow)
     | Paragraph (NonEmptyArray Words)
     | WithKeyword (OrgKeyword String) Block -- TODO: rename 'Affilated': https://orgmode.org/worg/dev/org-syntax-edited.html#Keywords
     | HRule
@@ -295,7 +296,11 @@ data ListType
 derive instance Eq ListType
 
 
-data TableRow = BreakT | Row (NonEmptyArray TableColumn)
+newtype TableFormat = TableFormat String
+newtype TableCustomBreak = TableCustomBreak String
+
+
+data TableRow = BreakT (Maybe TableCustomBreak) | Row (NonEmptyArray TableColumn)
 
 
 data TableColumn = Empty | Column (NonEmptyArray Words)
@@ -355,6 +360,8 @@ derive instance Newtype Clock _
 derive instance Newtype Diary _
 derive instance Newtype LogBookEntry _
 derive instance Newtype LogBook _
+derive instance Newtype TableFormat _
+derive instance Newtype TableCustomBreak _
 
 -- internals below, they don't need Newtype instance
 
@@ -760,25 +767,27 @@ exportItems :: NonEmptyArray Item -> Array JsonListItem
 exportItems = NEA.toArray >>> map convertListItem
 
 
-type JsonRows = Array (Array (Array Words))
+type JsonRows = Array (Either String (Array (Array Words)))
 
 
 importRows :: JsonRows -> NonEmptyArray TableRow
 importRows =
-    map importRow >>> toNEA BreakT
+    map importRow >>> toNEA (BreakT Nothing)
     where
         importColumn [] = Empty
         importColumn ws = Column $ importWords ws
-        importRow [] = BreakT
-        importRow columns = Row $ toNEA Empty $ importColumn <$> columns
+        importRow (Right []) = BreakT Nothing -- FIXME: breaks are imported as columns
+        importRow (Right columns) = Row $ toNEA Empty $ importColumn <$> columns
+        importRow (Left break) = BreakT $ Just $ TableCustomBreak break
 exportRows :: NonEmptyArray TableRow -> JsonRows
 exportRows =
     NEA.toArray >>> map exportRow
     where
         exportColumn Empty = []
         exportColumn (Column ws) = exportWords ws
-        exportRow BreakT = []
-        exportRow (Row columns) = exportColumn <$> NEA.toArray columns
+        exportRow (BreakT (Just customBreak)) = Left $ unwrap customBreak
+        exportRow (BreakT Nothing) = Right []
+        exportRow (Row columns) = Right $ exportColumn <$> NEA.toArray columns
 
 
 readBlock :: Foreign -> F Block
@@ -795,7 +804,7 @@ readBlock =
         , list : Variant.use2 $ \ltype items -> List $ ListItems (fromVariant ltype) $ importItems items
         , litem : Variant.use3 $ \ltype { indent } itemdef ->
                         DetachedItem $ setIndent { indent } $ loadDetachedItem (fromVariant ltype) itemdef
-        , table : Variant.use1 $ \{ format, rows } -> Table format $ importRows rows
+        , table : Variant.use1 $ \{ format, rows } -> Table (wrap <$> format) $ importRows rows
         , clock : Variant.use3 $ \start end clock ->
                         ClockB { start : load start, end : load <$> end } $ wrap clock
         }
@@ -817,7 +826,7 @@ blockToVariant = case _ of
             (toVariant ltype)
             { indent : fromMaybe "" mbIndent }
             $ convertDetachedItem ditem
-    Table mbFormat rows -> Variant.select1 (Proxy :: _ "table") { format : mbFormat, rows : exportRows rows }
+    Table mbFormat rows -> Variant.select1 (Proxy :: _ "table") { format : unwrap <$> mbFormat, rows : exportRows rows }
     ClockB { start, end } clock ->
         Variant.select3 (Proxy :: _ "clock") (convert start) (convert <$> end) $ unwrap clock
     JoinB _ _ -> Variant.select2 (Proxy :: _ "kind") Quote [ Plain "ERR" ] -- Joins are handled on top level
@@ -836,7 +845,7 @@ blockFromVariant =
         , list : Variant.uncase2 >>> Tuple.uncurry \ltype items -> List $ ListItems (fromVariant ltype) $ importItems items
         , litem : Variant.uncase3 >>> \(ltype /\ { indent } /\ def) ->
                         DetachedItem $ setIndent { indent } $ loadDetachedItem (fromVariant ltype) def
-        , table : Variant.uncase1 >>> \{ format, rows } -> Table format $ importRows rows
+        , table : Variant.uncase1 >>> \{ format, rows } -> Table (wrap <$> format) $ importRows rows
         , clock : Variant.uncase3 >>> \(start /\ end /\ clock) ->
                         ClockB { start : load start, end : load <$> end } $ wrap clock
         }
