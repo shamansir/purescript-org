@@ -629,7 +629,7 @@ extractFromRoot =
                 Rule "text-entity" [ TextRule "entity-name" entityName ] ->
                     Just $ Org.entity entityName
                 Rule "text-link" [ Rule "text-link-plain" linkRules ] ->
-                    Just $ Org.ref (createLinkTarget linkRules)
+                    Just $ Org.raw (createLinkTarget linkRules)
                 Rule "link-format" [ Rule "link" linkRules, TextRule "link-description" linkDescr ] ->
                     Just $ Org.to (createLinkTarget linkRules) linkDescr
                 Rule "link-format" [ Rule "link" linkRules ] ->

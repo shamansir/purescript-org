@@ -81,11 +81,13 @@ data Block
 data Words
     = Marked MarkupKey String
     | Link LinkTarget (Maybe String)
+    | RawLink LinkTarget -- link with no wrapping
     | Image ImageSource
+    | RawImage ImageSource -- image with no wrapping
     | Punct CodePoint
     | Plain String
     | Markup String
-    | DateTime { start :: OrgDateTime, end :: Maybe OrgDateTime } -- FIXME: use OrgDateTimeRange
+    | DateTime { start :: OrgDateTime, end :: Maybe OrgDateTime }
     | ClockW Clock
     | DiaryW Diary
     | FootnoteRef { label :: String, def :: Maybe String } -- FIXME: support using `Words` here may be, but it causes recursion fails when exporting to JSON
@@ -1029,7 +1031,9 @@ instance JsonOverRow DiaryRow Diary where
 
 type WordsRow =
     ( link :: Case2 LinkTarget (Maybe String)
+    , linkRaw :: Case1 LinkTarget
     , image :: Case1 ImageSource
+    , imageRaw :: Case1 ImageSource
     , punct :: Case1 Char
     , plain :: Case1 String
     , markup :: Case1 String
@@ -1051,7 +1055,9 @@ readWords =
         (Proxy :: _ WordsRow)
         { marked : Variant.use2 $ Marked <<< rowArrayToMarkupKey
         , link : Variant.use2 Link
+        , linkRaw : Variant.use1 RawLink
         , image : Variant.use1 Image
+        , imageRaw : Variant.use1 RawImage
         , punct : Variant.use1 $ Punct <<< codePointFromChar
         , plain : Variant.use1 Plain
         , markup : Variant.use1 Markup
@@ -1070,7 +1076,9 @@ wordsToVariant :: Words -> Variant WordsRow
 wordsToVariant = case _ of
     Marked key s -> Variant.select2 (Proxy :: _ "marked") (markupKeyToRowArray key) s
     Link url mbStr -> Variant.select2 (Proxy :: _ "link") url mbStr
+    RawLink url -> Variant.select1 (Proxy :: _ "linkRaw") url
     Image url -> Variant.select1 (Proxy :: _ "image") url
+    RawImage url -> Variant.select1 (Proxy :: _ "imageRaw") url
     Punct _ -> Variant.select1 (Proxy :: _ "punct") $ ':' -- FIXME
     Plain p -> Variant.select1 (Proxy :: _ "plain") p
     Markup mup -> Variant.select1 (Proxy :: _ "markup") mup
@@ -1089,7 +1097,9 @@ wordsFromVariant =
     Variant.match
         { marked : Variant.uncase2 >>> lmap rowArrayToMarkupKey >>> Tuple.uncurry Marked
         , link : Variant.uncase2 >>> Tuple.uncurry Link
+        , linkRaw : Variant.uncase1 >>> RawLink
         , image : Variant.uncase1 >>> Image
+        , imageRaw : Variant.uncase1 >>> RawImage
         , punct : Variant.uncase1 >>> codePointFromChar >>> Punct
         , plain : Variant.uncase1 >>> Plain
         , markup : Variant.uncase1 >>> Markup

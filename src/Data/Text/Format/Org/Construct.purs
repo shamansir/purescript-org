@@ -432,6 +432,10 @@ ref :: LinkTarget -> Words
 ref lt = Link lt Nothing
 
 
+raw :: LinkTarget -> Words
+raw = RawLink
+
+
 rem :: String -> LinkTarget
 rem = Remote
 
@@ -458,6 +462,10 @@ img = Image <<< RemoteSrc
 
 img_ :: ImageSource -> Words
 img_ = Image
+
+
+imgRaw_ :: ImageSource -> Words
+imgRaw_ = RawImage
 
 
 text :: String -> Words

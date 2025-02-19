@@ -287,11 +287,13 @@ layoutWords = case _ of
                     )
                     "]"
             Nothing ->
-                linkTrg trg
-                -- D.bracket "[[" (linkTrg trg) "]]"
+                D.bracket "[[" (linkTrg trg) "]]"
+    Org.RawLink trg ->
+        linkTrg trg
     Org.Image src ->
+        D.bracket "[[" (imgSrc src) "]]"
+    Org.RawImage src ->
         imgSrc src
-        -- D.bracket "[[" (imgSrc src) "]]"
     Org.Punct p -> D.text $ String.singleton p -- FIXME
     Org.Markup str -> D.text str -- FIXME
     Org.DateTime { start, end } ->

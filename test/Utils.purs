@@ -65,4 +65,4 @@ compareBy Silent = \sA sB -> if sA == sB then pure unit else TA.fail "x"
 
 
 shouldEqual :: forall m. MonadEffect m ⇒ MonadThrow Error m ⇒ String -> String -> m Unit
-shouldEqual = compareBy Silent
+shouldEqual = compareBy OnlyDifferent

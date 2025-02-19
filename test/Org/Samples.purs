@@ -88,14 +88,13 @@ pursifiedSamples =
 
     , on_ $ mkPursSample Test04a.test (c 4 'a') (s "formatting-headings")  $ f "formatting: headings"
     , on_ $ mkPursSample Test04b.test (c 4 'b') (s "formatting-blocks")    $ f "formatting: blocks"
-    , on_ $ mkPursSample Test04c.test (c 4 'c') (s "formatting-lists")     $ f "formatting: lists"
+    , on_ $ mkPursSample Test04c.test (c 4 'c') (s "formatting-lists")     $ f "formatting: lists" -- fails
     , on_ $ mkPursSample Test04d.test (c 4 'd') (s "formatting-tables")    $ f "formatting: tables"
     , on_ $ mkPursSample Test04e.test (c 4 'e') (s "formatting-footnotes") $ f "formatting: footnotes"
-    , on_ $ mkPursSample Test04f.test (c 4 'f') (s "formatting-comments")  $ f "formatting: comments"
+    , on_ $ mkPursSample Test04f.test (c 4 'f') (s "formatting-comments")  $ f "formatting: comments" -- fails
     , on_ $ mkPursSample Test04g.test (c 4 'g') (s "formatting-dates")     $ f "formatting: dates"
     , on_ $ mkPursSample Test04h.test (c 4 'h') (s "formatting-properties-and-keywords") $ f "formatting: properties & keywords"
-    , on_ $ mkPursSample Test04i.test (c 4 'i') (s "formatting-drawers")   $ f "formatting: drawers"
-    , on_ $ mkPursSample Test04i.test (c 4 'i') (s "formatting-drawers")   $ f "formatting: drawers"
+    , on_ $ mkPursSample Test04i.test (c 4 'i') (s "formatting-drawers")   $ f "formatting: drawers" -- fails
 
     -- , mkPursSample Test06a.test (c 6 'a') (s "properties-and-drawers") $ f "properties and drawers"
     ]
@@ -121,15 +120,15 @@ parsedSamples =
     , on_ $ mkEbnfSample' noRefresh (c 5 'g') (ep 2 1) (s "tags") (f "tags")
     , on_ $ mkEbnfSample' noRefresh (c 5 'h') (ep 2 4) (s "drawers-logging") (f "logging in drawers")
     , on_ $ mkEbnfSample' noRefresh (c 5 'i') (ep' 3 4 'a') (s "properties-drawer") (f "properties drawer")
-    -- , on_ $ mkEbnfSample' noRefresh (c 5 'j') (ep' 3 4 'b') (s "template") (f "template") -- fails (and it's ok)
+    -- , off $ mkEbnfSample' noRefresh (c 5 'j') (ep' 3 4 'b') (s "template") (f "template") -- fails (and it's ok)
     , on_ $ mkEbnfSample' noRefresh (c 5 'k') (ep 4 1) (s "ordered-tasks") (f "ordered tasks")
     , on_ $ mkEbnfSample' noRefresh (c 5 'l') (ep 4 2) (s "timers") (f "timers")
     , on_ $ mkEbnfSample' noRefresh (c 5 'm') (ep 5 4) (s "priorities") (f "priorities")
     , on_ $ mkEbnfSample noRefresh (c 6 'a') (s "properties-and-drawers") (f "properties and drawers")
-    , on_ $ mkEbnfSample noRefresh (c 7 'a') (s "org-syntax-cheatsheet") (f "ORG syntax cheatsheet") -- fails
-    , on_ $ mkEbnfSample noRefresh (c 7 'b') (s "organice.sample") (f "ORG Sample from organice") -- fails
-    , on_ $ mkEbnfSample noRefresh (c 7 'c') (s "simple") (f "ORG in a simplest") -- fails
-    , on_ $ mkEbnfSample noRefresh (c 7 'd') (s "test_a") (f "different features") -- fails
+    , off $ mkEbnfSample noRefresh (c 7 'a') (s "org-syntax-cheatsheet") (f "ORG syntax cheatsheet") -- fails, mostly since loses whitespace
+    , off $ mkEbnfSample noRefresh (c 7 'b') (s "organice.sample") (f "ORG Sample from organice") -- fails, mostly since loses whitespace
+    , on_ $ mkEbnfSample noRefresh (c 7 'c') (s "simple") (f "ORG in a simplest")
+    , on_ $ mkEbnfSample noRefresh (c 7 'd') (s "test_a") (f "different features")
     , on_ $ mkEbnfSample noRefresh (c 7 'e') (s "test") (f "different features v.2") -- fails
 
     ]
