@@ -12,7 +12,6 @@ import Data.Either (Either(..))
 import Data.Traversable (traverse_)
 -- import Data.Text.Doc as D
 
-import Data.Text.Diff (diffStackCompare) as Diff
 import Data.Text.Doc as D
 import Data.Text.Format.Org.Types (OrgFile, Check(..))
 import Data.Text.Format.Org.Construct as Org
@@ -77,13 +76,13 @@ qjsontest orgFile = do
     case eFromJsonF of
         Right orgFileFromJsonF ->
             (D.render renderOptions $ R.layout orgFile)
-                `Diff.diffStackCompare` (D.render renderOptions $ R.layout orgFileFromJsonF) -- `shouldEqual` || `Diff.diffCompare`
+                `U.shouldEqual` (D.render renderOptions $ R.layout orgFileFromJsonF)
         Left errors ->
             traverse_ (F.renderForeignError >>> fail) errors
     case eFromJsonTxt of
         Right orgFileFromJsonTxt -> do
-            writeJSON orgFileFromJsonTxt `shouldEqual` orgFileJson
+            writeJSON orgFileFromJsonTxt `U.shouldEqual` orgFileJson
             (D.render renderOptions $ R.layout orgFile)
-                `Diff.diffStackCompare` (D.render renderOptions $ R.layout orgFileFromJsonTxt) -- `shouldEqual` || `Diff.diffCompare`
+                `U.shouldEqual` (D.render renderOptions $ R.layout orgFileFromJsonTxt)
         Left errors ->
             traverse_ (F.renderForeignError >>> fail) errors

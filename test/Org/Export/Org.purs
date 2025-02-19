@@ -5,7 +5,6 @@ import Prelude
 import Effect.Class (liftEffect, class MonadEffect)
 import Control.Monad.Error.Class (class MonadThrow)
 
-import Data.Text.Diff (diffStackCompare) as Diff
 import Data.Text.Doc as D
 import Data.Text.Format.Org.Types (OrgFile)
 import Data.Text.Format.Org.Render as R
@@ -49,4 +48,4 @@ qtest
 qtest fileSlug ro orgFile = do
     orgTestText <- liftEffect $ readTextFile UTF8 ("./test/examples/org-test/" <> fileSlug <> ".org")
     (D.render renderOptions $ R.layoutWith ro orgFile)
-            `Diff.diffStackCompare` orgTestText -- `shouldEqual` || `Diff.diffCompare`
+            `U.shouldEqual` orgTestText -- `shouldEqual` || `Diff.diffCompare`

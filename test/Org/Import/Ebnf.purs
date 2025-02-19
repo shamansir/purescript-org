@@ -7,7 +7,6 @@ import Control.Monad.Error.Class (class MonadThrow)
 
 import Data.Text.Doc as D
 import Data.Text.Format.Org.Render (defaultRO, RenderOptions, layoutWith) as R
-import Data.Text.Diff (diffStackCompare) as Diff
 import Data.Either (Either(..))
 
 import Node.Encoding (Encoding(..))
@@ -27,7 +26,7 @@ import Data.Text.Format.Org.Parse.Ebnf (FromEbnf(..))
 spec :: Spec Unit
 spec = do
 
-  describe "import from EBNF" $ do
+  describe "import using EBNF" $ do
 
     U.helper
         { title : const _.friendly
@@ -53,4 +52,4 @@ qtest fileSlug ro  = do
         Right (FromEbnf orgFile)-> do
             orgTestText <- liftEffect $ readTextFile UTF8 ("./test/examples/org-test/" <> fileSlug <> ".org")
             (D.render renderOptions $ R.layoutWith ro orgFile)
-                `Diff.diffStackCompare` orgTestText -- `shouldEqual` || `Diff.diffCompare`
+                `U.shouldEqual` orgTestText -- ``Diff.diffStackCompare` || `shouldEqual` || `Diff.diffCompare`
