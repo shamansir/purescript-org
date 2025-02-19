@@ -1,16 +1,22 @@
 * _*&ndOrg;*_
+* DONE Markup
+- [X] Tables
+- [X] Horizontal Rules
+- [X] Fenced text (that starts with colons `:`)
+* DONE Export to JSON
+** DONE Test throughout
 ** TODO Fix the issues with indenting inner lists, maybe =ListItem= / =DetachedListItem= should just contain indentation amount (it does, but it is not applied on rendering somehow)
 ** TODO Fix ordering of planning timestamps, in =org= they are sorted by their time
 ** TODO Support Drawers that contain =Block= (or many Blocks), because drawers can contain anything (multiline drawers break now)
 ** TODO Support macro and `equations and LaTeX
 ** TODO For indentation, try to keep same indentation everywhere
-** TODO Logbook
-*** TODO Fix parsing complex items where there are several timestamps etc.
+** DONE Logbook
+*** DONE Fix parsing complex items where there are several timestamps etc.
 *** DONE Support Logbook items with continuation lines
 *** TODO Like any other drawer, =Logbook= can be placed anywhere, now we lock it to the heading (and adapted tests for that)
 **** But it complicates import from/export to JSON because it causes recursive usage of =BlockRow=
 **** This should help solving =_extractLogBookEntry= and =collectTextOnly= and other hacks in Ebnf builder
-*** TODO Maybe Logbook can contain typed timestamps about the state changes
+*** DONE Maybe Logbook can contain typed timestamps about the state changes
 ** TODO =Org.Construct= contains very cryptic-named functions, also totally not in the style with other namings
 ** TODO Publish to Pursuit
 *** TODO It could require =purescript-text-formatting= also to be pushed

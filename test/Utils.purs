@@ -7,13 +7,10 @@ import Effect.Class (class MonadEffect)
 
 import Control.Monad.Error.Class (class MonadThrow)
 
-import Data.Tuple.Nested ((/\), type (/\))
 import Data.FoldableWithIndex (foldlWithIndex, class FoldableWithIndex)
-import Data.Text.Diff (class Diffable)
-import Data.Text.Diff (diffCompare, diffStackCompare, onlyDifferentCompare) as Diff
+import Data.Text.Diff (compareBy, Comparator(..)) as Diff
 
-import Test.Spec (Spec, SpecT, it, class Example)
-import Test.Spec.Assertions (shouldEqual, fail) as TA
+import Test.Spec (SpecT, it, class Example)
 
 -- Monad m ⇒ Example t arg g ⇒ String → t → SpecT g arg m Unit
 
@@ -48,21 +45,5 @@ helper { title, spec } =
         (pure unit)
 
 
-data Comparator
-    = Stack
-    | Zip
-    | Plain
-    | OnlyDifferent
-    | Silent
-
-
-compareBy :: forall m. MonadEffect m ⇒ MonadThrow Error m ⇒ Comparator -> (String -> String -> m Unit)
-compareBy Stack = Diff.diffStackCompare
-compareBy Zip = Diff.diffCompare
-compareBy OnlyDifferent = Diff.onlyDifferentCompare
-compareBy Plain = TA.shouldEqual
-compareBy Silent = \sA sB -> if sA == sB then pure unit else TA.fail "x"
-
-
 shouldEqual :: forall m. MonadEffect m ⇒ MonadThrow Error m ⇒ String -> String -> m Unit
-shouldEqual = compareBy OnlyDifferent
+shouldEqual = Diff.compareBy Diff.OnlyDifferent
