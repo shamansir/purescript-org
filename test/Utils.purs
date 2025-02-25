@@ -8,7 +8,7 @@ import Effect.Class (class MonadEffect)
 import Control.Monad.Error.Class (class MonadThrow)
 
 import Data.FoldableWithIndex (foldlWithIndex, class FoldableWithIndex)
-import Data.Text.Diff (compareBy, Comparator(..)) as Diff
+import Data.Text.Diff (compareBy, Comparator(..), Limit(..)) as Diff
 
 import Test.Spec (SpecT, it, class Example)
 
@@ -46,4 +46,4 @@ helper { title, spec } =
 
 
 shouldEqual :: forall m. MonadEffect m ⇒ MonadThrow Error m ⇒ String -> String -> m Unit
-shouldEqual = Diff.compareBy Diff.OnlyDifferent
+shouldEqual = Diff.compareBy (Diff.OnlyDifferent $ Diff.Limit 20)
